@@ -1,0 +1,33 @@
+# Example build test case
+# This demonstrates the YAML schema for defining test cases
+
+id: TC-BUILD-001
+name: Project Build Verification
+suite: build
+priority: 1
+timeout: 120000
+dependencies: []
+tags: [build, compile]
+
+steps:
+  - name: Check Node.js version
+    command: node --version
+    expectPatterns:
+      - "v[0-9]+\\.[0-9]+\\.[0-9]+"
+
+  - name: Install dependencies
+    command: npm install
+    timeout: 60000
+
+  - name: Run build
+    command: npm run build
+    timeout: 90000
+    rejectPatterns:
+      - "error"
+      - "failed"
+
+criteria: |
+  Verify that the project builds successfully:
+  - Node.js is installed and accessible
+  - npm install completes without errors
+  - npm run build completes without errors

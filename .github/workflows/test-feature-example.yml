@@ -1,0 +1,35 @@
+# Example per-feature test workflow.
+#
+# To add a new feature test:
+# 1. Copy this file to test-<feature>.yml
+# 2. Change the name and tag value below
+# 3. Add it as a job in ci.yml
+#
+# Each feature workflow is ~25 lines — a thin delegator to test-run.yml.
+
+name: "Test: Example Feature"
+
+on:
+  workflow_dispatch:
+    inputs:
+      judge_mode:
+        description: "Judge mode"
+        required: false
+        default: "simple"
+        type: choice
+        options:
+          - "simple"
+          - "dual"
+  workflow_call:
+    inputs:
+      judge_mode:
+        required: false
+        default: "simple"
+        type: string
+
+jobs:
+  test:
+    uses: ./.github/workflows/test-run.yml
+    with:
+      tag: "example"                    # <-- Change this to your feature tag
+      judge_mode: ${{ inputs.judge_mode }}

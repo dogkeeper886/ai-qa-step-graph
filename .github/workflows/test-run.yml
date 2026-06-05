@@ -1,0 +1,105 @@
+name: Test Run
+
+# Reusable test runner — called by per-feature or per-suite workflows.
+# Supports both --tag and --suite filtering.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Run tests with this tag (e.g., auth, build)"
+        required: false
+        type: string
+      suite:
+        description: "Run tests in this suite (e.g., build, integration, e2e)"
+        required: false
+        type: string
+      judge_mode:
+        description: "Judge mode (simple = no LLM, dual = simple + LLM)"
+        required: false
+        default: "simple"
+        type: string
+      judge_model:
+        description: "LLM model for judging"
+        required: false
+        default: "llama3:8b"
+        type: string
+    outputs:
+      result:
+        description: "Test result"
+        value: ${{ jobs.test.outputs.result }}
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.run-tests.outcome }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: cd cicd/tests && npm ci
+
+      - name: Build test runner
+        run: cd cicd/tests && npm run build
+
+      - name: Run tests
+        id: run-tests
+        run: |
+          cd cicd/tests
+
+          # Set LLM judge env vars from repo variables (fall back to defaults)
+          export LLM_JUDGE_URL="${{ vars.LLM_JUDGE_URL }}"
+          export LLM_JUDGE_MODEL="${{ vars.LLM_JUDGE_MODEL }}"
+          [ -z "$LLM_JUDGE_URL" ] && export LLM_JUDGE_URL="http://localhost:11434"
+          [ -z "$LLM_JUDGE_MODEL" ] && export LLM_JUDGE_MODEL="${{ inputs.judge_model }}"
+
+          # Build filter flags
+          FILTER_FLAGS=""
+          if [ -n "${{ inputs.tag }}" ]; then
+            FILTER_FLAGS="--tag ${{ inputs.tag }}"
+          elif [ -n "${{ inputs.suite }}" ]; then
+            FILTER_FLAGS="--suite ${{ inputs.suite }}"
+          fi
+
+          # Build judge flags
+          JUDGE_FLAGS=""
+          if [ "${{ inputs.judge_mode }}" = "simple" ]; then
+            JUDGE_FLAGS="--no-llm"
+          else
+            JUDGE_FLAGS="--judge-model ${{ inputs.judge_model }}"
+          fi
+
+          echo "Filter: $FILTER_FLAGS"
+          echo "Judge: $JUDGE_FLAGS"
+
+          npx tsx src/cli.ts run $FILTER_FLAGS $JUDGE_FLAGS --format json > /tmp/test-results.json || true
+
+          echo "--- Results ---"
+          cat /tmp/test-results.json
+
+      - name: Check results
+        run: |
+          FAILED=$(jq '.summary.failed' /tmp/test-results.json)
+          echo "Failed tests: $FAILED"
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::error::$FAILED test(s) failed"
+            exit 1
+          fi
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ inputs.tag || inputs.suite || 'all' }}
+          path: |
+            /tmp/test-results.json
+            cicd/results/

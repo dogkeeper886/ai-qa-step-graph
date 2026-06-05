@@ -1,0 +1,44 @@
+name: CI Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      judge_mode:
+        description: "Judge mode"
+        required: false
+        default: "simple"
+        type: choice
+        options:
+          - "simple"
+          - "dual"
+      judge_model:
+        description: "LLM model for judging (if dual mode)"
+        required: false
+        default: "llama3:8b"
+        type: string
+
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yml
+
+  # Add per-feature test jobs here. Each runs in parallel after build.
+  # Example:
+  #
+  # test-auth:
+  #   name: "Test: Auth"
+  #   needs: build
+  #   uses: ./.github/workflows/test-run.yml
+  #   with:
+  #     tag: auth
+  #     judge_mode: ${{ inputs.judge_mode }}
+  #     judge_model: ${{ inputs.judge_model }}
+
+  # Default: run all tests (no tag filter)
+  test-all:
+    name: "Test: All"
+    needs: build
+    uses: ./.github/workflows/test-run.yml
+    with:
+      judge_mode: ${{ inputs.judge_mode }}
+      judge_model: ${{ inputs.judge_model }}
