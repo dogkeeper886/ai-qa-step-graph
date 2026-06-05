@@ -1,0 +1,20 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: stepstore
+      POSTGRES_PASSWORD: stepstore
+      POSTGRES_DB: stepstore
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./step-store/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stepstore -d stepstore"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  pgdata:
