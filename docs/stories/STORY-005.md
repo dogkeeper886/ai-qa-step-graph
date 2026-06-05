@@ -62,4 +62,4 @@ not just on the way *out*.
 ## Status
 
 - Created: 2026-06-06
-- Issues: none
+- Issues: #8 (core resolution, re-homed from STORY-001), #48 (concurrency-safe), #49 (collapse existing duplicates)
