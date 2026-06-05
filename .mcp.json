@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "step-store": {
+      "command": "npm",
+      "args": ["--prefix", "step-store", "run", "server"],
+      "env": { "MCP_TRANSPORT": "stdio" }
+    }
+  }
+}
