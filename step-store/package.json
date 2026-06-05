@@ -8,6 +8,10 @@
     "embed": "tsx src/embed.ts",
     "server": "tsx src/server.ts",
     "regen": "tsx src/regen.ts",
+    "load-tests": "tsx src/load-tests.ts",
+    "audit-bind": "tsx src/audit-bind.ts",
+    "port-yaml": "tsx src/port-yaml.ts",
+    "drift": "tsx src/drift.ts",
     "query": "tsx src/query.ts",
     "smoke": "tsx src/smoke.ts"
   },

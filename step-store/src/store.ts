@@ -15,29 +15,37 @@ export interface StepHit {
   text: string;
   conf: number;
   src: string | null;
+  namespace: string | null;
   distance: number; // cosine distance (0 = identical meaning)
 }
 
-/** Return confirmed steps nearest `phrase` by meaning, closest first. */
+/**
+ * Return confirmed steps nearest `phrase` by meaning, closest first.
+ * `namespace` scopes the search to one repo/tenant when given (a filter, not
+ * isolation); omit it to search across all namespaces.
+ */
 export async function searchStep(
   phrase: string,
   k = 5,
   maxDistance = DEFAULT_MAX_DISTANCE,
+  namespace: string | null = null,
 ): Promise<StepHit[]> {
   const v = toVectorLiteral(await embed(phrase));
   const { rows } = await pool.query(
-    `SELECT id, text, conf, src, (embedding <=> $1::vector) AS distance
+    `SELECT id, text, conf, src, namespace, (embedding <=> $1::vector) AS distance
        FROM step
       WHERE (embedding <=> $1::vector) <= $3
+        AND ($4::text IS NULL OR namespace = $4)
       ORDER BY embedding <=> $1::vector
       LIMIT $2`,
-    [v, k, maxDistance],
+    [v, k, maxDistance, namespace],
   );
   return rows.map((r) => ({
     id: Number(r.id),
     text: r.text,
     conf: Number(r.conf),
     src: r.src,
+    namespace: r.namespace,
     distance: Number(r.distance),
   }));
 }

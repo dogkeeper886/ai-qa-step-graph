@@ -37,10 +37,19 @@ function buildServer(): McpServer {
           .positive()
           .optional()
           .describe(`cosine-distance cutoff for a match (default ${DEFAULT_MAX_DISTANCE})`),
+        namespace: z
+          .string()
+          .optional()
+          .describe('scope the search to one repo/tenant (default: all namespaces)'),
       },
     },
-    async ({ phrase, k, max_distance }) => {
-      const hits = await searchStep(phrase, k ?? 5, max_distance ?? DEFAULT_MAX_DISTANCE);
+    async ({ phrase, k, max_distance, namespace }) => {
+      const hits = await searchStep(
+        phrase,
+        k ?? 5,
+        max_distance ?? DEFAULT_MAX_DISTANCE,
+        namespace ?? null,
+      );
       const payload =
         hits.length === 0
           ? { match: false, message: 'no match', hits: [] }

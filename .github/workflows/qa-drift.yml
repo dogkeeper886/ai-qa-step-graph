@@ -1,0 +1,31 @@
+name: qa drift
+
+# STORY-004 #27: fail the build when a test has drifted from its story.
+# Deterministic + file-only (sha256 + binding audit) — no services needed, so
+# this is a thin, fast gate that composes with the rest of CI rather than
+# duplicating the dual-judge runner.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  drift:
+    name: story↔test drift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install step-store deps
+        run: npm --prefix step-store ci
+
+      - name: Check for drift (stale stories + unbound scripts)
+        run: npm --prefix step-store run drift

@@ -41,7 +41,9 @@ async function regen() {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('TRUNCATE step RESTART IDENTITY');
+    // Rebuild only the canonical slice. Test-doc rows are a separate derived
+    // index (load-tests.ts, src='test-doc') and own their own rows — don't wipe them.
+    await client.query(`DELETE FROM step WHERE src IS DISTINCT FROM 'test-doc'`);
     for (const s of steps) {
       const v = toVectorLiteral(await embed(s.text));
       await client.query(

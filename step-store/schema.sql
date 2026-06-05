@@ -15,6 +15,13 @@ CREATE TABLE IF NOT EXISTS step (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- STORY-004 #26: test-doc steps are a derived index over tests/**/*.md.
+--   namespace  scopes rows by repo/tenant (a search filter, not isolation)
+--   kind       distinguishes a step row from other row kinds
+-- Both are nullable so rows written before this column existed are unaffected.
+ALTER TABLE step ADD COLUMN IF NOT EXISTS namespace text;
+ALTER TABLE step ADD COLUMN IF NOT EXISTS kind text;
+
 -- HNSW index for fast nearest-neighbour by cosine distance.
 CREATE INDEX IF NOT EXISTS step_embedding_cosine_idx
   ON step USING hnsw (embedding vector_cosine_ops);
