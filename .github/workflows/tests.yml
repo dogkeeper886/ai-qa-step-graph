@@ -1,0 +1,39 @@
+name: tests
+
+# STORY-002 #36: run the assert-first suite against a real Postgres+pgvector
+# stack on every push / PR. Local↔CI parity (#16): CI stands the stack up with
+# the *same* `make up` / `make down` a developer runs — no separate code path.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  suite:
+    name: assert-first suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: |
+          npm --prefix step-store ci
+          npm --prefix cicd/tests ci
+
+      - name: Bring up the stack (same as local — make up)
+        run: make up
+
+      - name: Run the assert-first suite
+        run: npm --prefix cicd/tests test
+
+      - name: Tear down
+        if: always()
+        run: make down
