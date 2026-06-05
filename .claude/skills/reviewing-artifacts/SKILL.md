@@ -39,9 +39,11 @@ Ask these of any artifact. The artifact's type shifts which ones bite hardest.
    where room belongs, instead of freezing a "how" that will drift? Flag stale paths or
    filenames, magic values that should be derived, rigid step-by-step where a principle
    would do, and references to tools or layouts that have moved.
-4. **Fits the studio.** GitHub-native, markdown as the source of truth, goals over
-   specs. No leftover coupling to retired tools (Jira / Confluence / Jenkins) unless
-   it's a deliberate adapter. Cross-references resolve to files that exist.
+4. **Fits the studio.** Does it match the conventions this project actually uses —
+   markdown as the source of truth, plus the tools and layout the repo relies on now —
+   rather than a stack it has moved past? Flag coupling to a tool or layout the project
+   has genuinely retired or relocated; an integration the studio still uses, or a
+   deliberate adapter, is not a violation. Cross-references resolve to files that exist.
 5. **Right for its reader.** Agent-facing (commands, skills): unambiguous instructions
    the agent can follow. Human-facing (README, story): reads like a person wrote it for
    a person — clear, concrete, scannable.
