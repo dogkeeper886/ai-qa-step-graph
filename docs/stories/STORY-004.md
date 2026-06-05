@@ -46,7 +46,7 @@ Flow first (#21); the rest follow once the design lands:
 
 - Test file + folder structure (realize the format from #21).
 - `qw-*` commands + skills (the qa-workflow itself, producer→review paired).
-- Binding: unit/runner test ↔ markdown test file (transclusion vs audit).
+- Binding: port runner test ↔ markdown test file — audit (not codegen), per #21.
 - Read `tests/**/*.md` into the pgvector step-store (search + drift).
 - Drift detection: story changed → linked test docs surfaced as stale.
 - **Eventual outcome (not yet planned):** retire/delete the TestLink/Jira/Confluence
