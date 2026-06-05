@@ -27,7 +27,7 @@ The user wants the test captured as **readable markdown in the repo**, sitting c
 - **The markdown test format:** reuse the template's YAML / dual-judge structure, a per-test markdown doc, or both — and how that maps to an executable script.
 - **How linkage is recorded:** front-matter ids, a story ↔ test ↔ script index, a naming convention — what makes traceability reliable, not manual.
 - **Drift detection:** how "story changed → test stale" is actually detected (a review gate, a CI check, content hashes/timestamps) and surfaced.
-- **Markdown ↔ script binding:** does the markdown *generate* the script, or is the script *reviewed against* it? (transclusion vs audit — the same choice ADR-0001 faced)
+- **Markdown ↔ script binding:** does the markdown *generate* the script, or is the script *reviewed against* it? (transclusion vs audit)
 - **What CD means here:** publishing the MCP server / container image — the tail of the loop.
 - **Relationship to existing flow:** how this composes with `story → implement` and STORY-002's CI rather than duplicating them.
 
