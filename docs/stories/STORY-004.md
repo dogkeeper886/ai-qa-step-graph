@@ -34,20 +34,20 @@ The user wants the test captured as **readable markdown in the repo**, sitting c
 ## Status
 
 - Created: 2026-06-05
-- Issues: #21 (flow-design gate)
+- Issues: #21 (flow-design gate, closed), #23, #24, #25, #26, #27 (delivery)
 - Design record: see [#21](https://github.com/dogkeeper886/ai-qa-step-graph/issues/21) — the qa-workflow flow (kept on the issue, not as a drift-prone doc)
 
-### Planned tail (broken out after #21 is reviewed/approved)
+### Delivery tasks (broken out from #21)
 
 The endgame is a **qa-workflow** — a sibling to `dev-workflow` — that writes tests
 for this repo from its story or on request, as markdown in the repo, wired to the
 existing test-framework-template (`cicd/` dual-judge runner + `.github/workflows`).
-Flow first (#21); the rest follow once the design lands:
+Flow settled in #21; these realize it (all depend on #23):
 
-- Test file + folder structure (realize the format from #21).
-- `qw-*` commands + skills (the qa-workflow itself, producer→review paired).
-- Binding: port runner test ↔ markdown test file — audit (not codegen), per #21.
-- Read `tests/**/*.md` into the pgvector step-store (search + drift).
-- Drift detection: story changed → linked test docs surfaced as stale.
+- #23 — `tests/` folder + the test-doc markdown format (front-matter, README contract).
+- #24 — `qw-*` commands + skills (the qa-workflow itself, producer→review paired).
+- #25 — binding: port runner test ↔ markdown test file — audit (not codegen), per #21.
+- #26 — read `tests/**/*.md` into the pgvector step-store (search + drift).
+- #27 — drift detection: story changed → linked test docs surfaced as stale.
 - **Eventual outcome (not yet planned):** retire/delete the TestLink/Jira/Confluence
   skills + commands once the in-repo flow replaces what they did.
