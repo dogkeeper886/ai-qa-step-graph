@@ -14,10 +14,12 @@ steps:
     expectPatterns:
       - "indexed [0-9]+ step"
 
-  - name: Query by a paraphrase
-    command: make query Q="start the docker containers"
+  - name: Find a stored step by a paraphrase
+    command: make query Q="execute the smoke test over mcp"
     expectPatterns:
-      - "0\\.[0-9]+ +Start the services"
+      # Hits the smoke step from TS-01 (a step-store test doc); the corpus and
+      # this query move together — keep them aligned (verified ~0.20 distance).
+      - "0\\.[0-9]+ +Run the smoke test over MCP"
 
 criteria: |
   Test-doc steps are ingested into the pgvector store and findable by a
