@@ -34,4 +34,4 @@ Without a one-command path, every session re-invents the setup, manual steps get
 ## Status
 
 - Created: 2026-06-05
-- Issues: none
+- Issues: #12, #13, #14, #15, #16, #17
