@@ -30,4 +30,10 @@ This repo will hold real, load-bearing code — the MCP server, the pgvector que
 ## Status
 
 - Created: 2026-06-05
-- Issues: none
+- Issues: #35 (assert-first harness), #36 (CI w/ Postgres+pgvector), #37 (AI log-reviewer for failures), #38 (gate merges), #16 (local↔CI parity, re-homed from STORY-003)
+
+### Direction (settled on the issues)
+
+- Pass/fail is **deterministic asserts** — the embedding + 0.35 threshold already turns "meaning" into a number, so the bundled dual-judge **and** simple-judge are trimmed; the verdict is step-level asserts.
+- The **only** LLM use is an **on-fail** log-reviewer (#37) — advisory triage, never the gate, built on the Anthropic SDK, with an env-var off-switch (and a clean skip when no key is configured).
+- `cicd/` is ours to modify freely; keep changes backport-friendly to the upstream template.
