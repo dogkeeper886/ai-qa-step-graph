@@ -7,7 +7,7 @@
  * and the `Script:` binding; the objective, expected results, and story link
  * are TODOs for a human/agent to fill, then `qw-review-bind` audits the result.
  *
- * Run: npm run port-yaml -- cicd/tests/testcases/build/TC-BUILD-001.yml > tests/TS-NN-slug.md
+ * Run: npm run port-yaml -- cicd/tests/testcases/build/TC-BUILD-001.yml > docs/tests/TS-NN-slug.md
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

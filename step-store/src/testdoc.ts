@@ -1,5 +1,5 @@
 /**
- * STORY-004: the one parser for a tests/ scenario doc.
+ * STORY-004: the one parser for a docs/tests/ scenario doc.
  *
  * Shared by the loader (#26) and the bind audit (#25) so there is a single
  * reading of the format — two parsers would be their own drift risk.
@@ -43,7 +43,7 @@ function tableCells(row: string): string[] {
     .map((c) => c.replace(/\\\|/g, '|').trim());
 }
 
-/** The scenario docs in a tests/ dir, in stable order ([] if the dir is absent). */
+/** The scenario docs in a docs/tests/ dir, in stable order ([] if the dir is absent). */
 export function scenarioFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'README.md').sort();

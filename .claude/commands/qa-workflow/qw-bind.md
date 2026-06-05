@@ -4,7 +4,7 @@
 Link each case in a test doc to the cicd executable that runs it — or port an
 existing executable into a new test-doc scaffold (the revert direction).
 
-Target: a tests/TS-*.md scenario, or a cicd YAML to port.
+Target: a docs/tests/TS-*.md scenario, or a cicd YAML to port.
 
 ## PURPOSE
 
@@ -24,7 +24,7 @@ Fits in the qa-workflow:
 
 ### A. Forward — bind an existing test doc
 
-    /qw-bind tests/TS-01-stack-lifecycle.md
+    /qw-bind docs/tests/TS-01-stack-lifecycle.md
         │
         ├─► For each `### TC-NN:` case, set a `Script:` line to the cicd YAML that
         │   runs it (e.g. cicd/tests/testcases/integration/TC-INTEGRATION-001.yml).
@@ -37,11 +37,11 @@ Fits in the qa-workflow:
     /qw-bind cicd/tests/testcases/build/TC-BUILD-001.yml
         │
         ├─► Generate a scaffold from the YAML:
-        │     npm --prefix step-store run port-yaml -- <yaml> > tests/TS-NN-<slug>.md
+        │     npm --prefix step-store run port-yaml -- <yaml> > docs/tests/TS-NN-<slug>.md
         │   The scaffold carries the steps and the `Script:` binding; objective,
         │   expected results, story link, and namespace are TODOs.
         ├─► Fill the TODOs: `namespace`, `story` (+ `story_hash`), each TC's
-        │   objective and Expected Result column. (The format contract is tests/README.md.)
+        │   objective and Expected Result column. (The format contract is docs/tests/README.md.)
         └─► Run `/qw-review-bind` to confirm the binding, then `/qw-cases`-style review.
 
 ---

@@ -18,7 +18,7 @@ import { dirname, join } from 'node:path';
 import { readScenario, scenarioFiles } from './testdoc.js';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const TESTS_DIR = join(REPO_ROOT, 'tests');
+const TESTS_DIR = join(REPO_ROOT, 'docs', 'tests');
 
 export interface BindFinding {
   doc: string;
@@ -48,7 +48,7 @@ function yamlStepCount(path: string): number {
   return n;
 }
 
-/** Audit every case in every tests/ scenario; returns one finding per case. */
+/** Audit every case in every docs/tests/ scenario; returns one finding per case. */
 export function auditBindings(): BindFinding[] {
   const findings: BindFinding[] = [];
   for (const f of scenarioFiles(TESTS_DIR)) {

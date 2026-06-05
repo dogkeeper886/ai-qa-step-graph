@@ -4,7 +4,7 @@
 Audit that each test doc and its bound executable still agree — flag any case
 whose doc and script have diverged as `unbound`.
 
-Target: the tests/ scenarios (all, or one named file).
+Target: the docs/tests/ scenarios (all, or one named file).
 
 ## PURPOSE
 
@@ -47,6 +47,6 @@ Fits in the qa-workflow:
 
 - The audit (`audit-bind`) is structural + deterministic; it is the runnable check
   CI and `/qw-drift` reuse. Semantic agreement is the reviewer's job.
-- `unbound` is one of the test doc's `status` values (tests/README.md).
+- `unbound` is one of the test doc's `status` values (docs/tests/README.md).
 - Review paired with the producer `/qw-bind`.
 ```

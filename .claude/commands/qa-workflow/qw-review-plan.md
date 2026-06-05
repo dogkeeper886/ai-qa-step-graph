@@ -30,7 +30,7 @@ Fits in the qa-workflow:
         ├─► Step 2: Each scenario
         │   - [ ] One coherent slice; independently runnable.
         │   - [ ] Maps to at least one cicd executable (or names the gap to author).
-        │   - [ ] No duplication of a scenario already in tests/ (grep the story link).
+        │   - [ ] No duplication of a scenario already in docs/tests/ (grep the story link).
         │
         └─► Step 3: Decision
             - PASS: covers the story → proceed to `/qw-cases`.

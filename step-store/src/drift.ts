@@ -23,7 +23,7 @@ import { readScenario, scenarioFiles } from './testdoc.js';
 import { auditBindings } from './audit-bind.js';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const TESTS_DIR = join(REPO_ROOT, 'tests');
+const TESTS_DIR = join(REPO_ROOT, 'docs', 'tests');
 
 function sha256(path: string): string {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
@@ -65,7 +65,7 @@ for (const s of stale) console.log(`STALE    ${s.doc} — ${s.detail}`);
 for (const u of unbound) console.log(`UNBOUND  ${u.doc} ${u.tc} — ${u.detail}`);
 
 // A clean run over zero docs is "nothing checked", not "all good" — surface it.
-if (docCount === 0) console.log('WARNING: no test docs in tests/ — the drift gate checked nothing.');
+if (docCount === 0) console.log('WARNING: no test docs in docs/tests/ — the drift gate checked nothing.');
 
 const problems = stale.length + unbound.length;
 console.log(`\n${docCount} doc(s): ${stale.length} stale, ${unbound.length} unbound`);

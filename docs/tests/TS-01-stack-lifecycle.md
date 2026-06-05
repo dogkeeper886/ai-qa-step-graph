@@ -10,10 +10,10 @@ story_hash: 7474d8b616f08319cc4a6f3913471ceba9e548161954eb7ba5ab86dd243d5793
 
 ## Why this scenario exists
 
-[STORY-003](../docs/stories/STORY-003.md) made the step-store stack operable with a
+[STORY-003](../stories/STORY-003.md) made the step-store stack operable with a
 single lifecycle (`make up` / `down` / `clean` / `status`). This scenario verifies that
 chain end to end: the project builds, the services come up healthy, and the stack tears
-back down cleanly. It is the worked example for the `tests/` format — three cases, each
+back down cleanly. It is the worked example for the `docs/tests/` format — three cases, each
 bound to an existing `cicd/` executable.
 
 ### TC-01: Project build verification
