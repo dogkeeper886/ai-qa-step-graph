@@ -10,7 +10,9 @@
 #   npm test -- --no-llm
 
 SHELL := /bin/bash
-.PHONY: install help clean check
+.PHONY: install help clean check up down
+
+COMPOSE := docker compose
 
 # Default values
 NAME ?= my-project
@@ -38,6 +40,23 @@ help:
 	@echo "  npm test              # Run all tests"
 	@echo "  npm test -- --no-llm  # Run without LLM judge"
 	@echo "  npm run list          # List available tests"
+	@echo ""
+	@echo "Stack lifecycle (this repo's step-store):"
+	@echo "  make up        # Start Postgres+pgvector and the MCP server"
+	@echo "  make down      # Stop the stack"
+
+# ─── Stack lifecycle (STORY-003) ────────────────────────────────────────────
+# Operate the local step-store stack: Postgres + pgvector + the MCP server.
+
+up:
+	$(COMPOSE) up -d --build
+	@echo "Waiting for Postgres..."
+	@until $(COMPOSE) exec -T db pg_isready -U stepstore -d stepstore >/dev/null 2>&1; do sleep 1; done
+	@$(COMPOSE) exec -T db psql -U stepstore -d stepstore < step-store/schema.sql >/dev/null
+	@echo "Stack up: Postgres+pgvector and MCP server (HTTP :3000)."
+
+down:
+	$(COMPOSE) down
 
 check:
 ifndef TARGET
