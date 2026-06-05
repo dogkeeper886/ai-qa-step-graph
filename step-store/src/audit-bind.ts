@@ -12,10 +12,10 @@
  *
  * Run: npm run audit-bind
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { readScenario } from './testdoc.js';
+import { readScenario, scenarioFiles } from './testdoc.js';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TESTS_DIR = join(REPO_ROOT, 'tests');
@@ -27,19 +27,31 @@ export interface BindFinding {
   detail: string;
 }
 
-/** Count step entries (`- name:`) in a cicd test YAML. */
+/**
+ * Count step entries (`- name:`) inside the top-level `steps:` block of a cicd
+ * YAML — anchored to `steps:` so a `- name:` under some other list (a future
+ * `matrix:`, `hooks:`, …) doesn't inflate the count.
+ *
+ * This is a structural signal: equal counts mean "same number of steps", not
+ * "same steps" — a count-preserving edit (swap/reorder) stays `bound`. That is
+ * the floor for an audit-not-codegen design; semantic agreement is the
+ * reviewer's job in /qw-review-bind.
+ */
 function yamlStepCount(path: string): number {
-  return (readFileSync(path, 'utf8').match(/^\s*-\s+name:/gm) ?? []).length;
+  let inSteps = false;
+  let n = 0;
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
+    if (/^steps:\s*$/.test(line)) { inSteps = true; continue; }
+    if (inSteps && /^\S/.test(line)) inSteps = false; // dedent to the next top-level key
+    if (inSteps && /^\s*-\s+name:/.test(line)) n++;
+  }
+  return n;
 }
 
 /** Audit every case in every tests/ scenario; returns one finding per case. */
 export function auditBindings(): BindFinding[] {
   const findings: BindFinding[] = [];
-  const files = readdirSync(TESTS_DIR)
-    .filter((f) => f.endsWith('.md') && f !== 'README.md')
-    .sort();
-
-  for (const f of files) {
+  for (const f of scenarioFiles(TESTS_DIR)) {
     const { cases } = readScenario(join(TESTS_DIR, f));
     for (const c of cases) {
       if (!c.script) {

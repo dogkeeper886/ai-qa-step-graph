@@ -26,6 +26,10 @@ const yaml = readFileSync(isAbsolute(rel) ? rel : join(REPO_ROOT, rel), 'utf8');
 const name = yaml.match(/^name:\s*(.*)$/m)?.[1]?.trim() ?? 'Ported scenario';
 
 // Each step starts at `  - name:`; its block runs to the next step or EOF.
+// Escape pipes so a cell containing `|` (a regex alternation, a shell `||`)
+// stays one cell when the doc is parsed back (testdoc.tableCells).
+const esc = (s: string) => s.replace(/\|/g, '\\|');
+
 const stepRe = /^\s*-\s+name:\s*(.*)$/gm;
 const marks = [...yaml.matchAll(stepRe)];
 const rows = marks.map((m, i) => {
@@ -35,7 +39,7 @@ const rows = marks.map((m, i) => {
   const command = block.match(/^\s*command:\s*(.*)$/m)?.[1]?.trim();
   const expect = block.match(/expectPatterns:\s*\n\s*-\s*"?([^"\n]+)"?/)?.[1]?.trim();
   const action = command ? `${m[1].trim()} (\`${command}\`)` : m[1].trim();
-  return `| ${i + 1} | ${action} | ${expect ?? 'TODO'} |`;
+  return `| ${i + 1} | ${esc(action)} | ${esc(expect ?? 'TODO')} |`;
 });
 
 process.stdout.write(`---

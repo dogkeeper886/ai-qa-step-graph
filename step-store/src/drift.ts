@@ -16,10 +16,10 @@
  * Run: npm run drift
  */
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { readScenario } from './testdoc.js';
+import { readScenario, scenarioFiles } from './testdoc.js';
 import { auditBindings } from './audit-bind.js';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -37,11 +37,7 @@ interface Stale {
 /** Flag every scenario whose linked story has moved since last sync. */
 function staleDocs(): Stale[] {
   const stale: Stale[] = [];
-  const files = readdirSync(TESTS_DIR)
-    .filter((f) => f.endsWith('.md') && f !== 'README.md')
-    .sort();
-
-  for (const f of files) {
+  for (const f of scenarioFiles(TESTS_DIR)) {
     const { frontMatter: fm } = readScenario(join(TESTS_DIR, f));
     const story = fm.story;
     if (!story) {
@@ -61,13 +57,17 @@ function staleDocs(): Stale[] {
   return stale;
 }
 
+const docCount = scenarioFiles(TESTS_DIR).length;
 const stale = staleDocs();
 const unbound = auditBindings().filter((b) => !b.bound);
 
 for (const s of stale) console.log(`STALE    ${s.doc} — ${s.detail}`);
 for (const u of unbound) console.log(`UNBOUND  ${u.doc} ${u.tc} — ${u.detail}`);
 
+// A clean run over zero docs is "nothing checked", not "all good" — surface it.
+if (docCount === 0) console.log('WARNING: no test docs in tests/ — the drift gate checked nothing.');
+
 const problems = stale.length + unbound.length;
-console.log(`\n${stale.length} stale, ${unbound.length} unbound`);
+console.log(`\n${docCount} doc(s): ${stale.length} stale, ${unbound.length} unbound`);
 if (problems === 0) console.log('drift check clean — tests still match their stories.');
 process.exit(problems > 0 ? 1 : 0);

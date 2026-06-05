@@ -10,12 +10,11 @@
  *
  * Run: npm run load-tests   (needs the stack up: `make up`)
  */
-import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { pool } from './db.js';
 import { embed, toVectorLiteral } from './embed.js';
-import { readScenario, stepText } from './testdoc.js';
+import { readScenario, scenarioFiles, stepText } from './testdoc.js';
 
 const TESTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tests');
 
@@ -48,7 +47,7 @@ function docSteps(file: string, relPath: string): TestStep[] {
 /** Read every tests/*.md (except README), in stable order. */
 function loadAll(): TestStep[] {
   const out: TestStep[] = [];
-  for (const f of readdirSync(TESTS_DIR).filter((f) => f.endsWith('.md') && f !== 'README.md').sort()) {
+  for (const f of scenarioFiles(TESTS_DIR)) {
     out.push(...docSteps(join(TESTS_DIR, f), `tests/${f}`));
   }
   return out;
@@ -60,7 +59,11 @@ async function load() {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    // Idempotent: drop this repo's prior test-doc rows, then re-insert.
+    // Idempotent: drop the prior test-doc rows for the namespaces this load
+    // covers, then re-insert. (Limitation: rows under a namespace no longer
+    // present in tests/ — e.g. a doc's namespace was renamed or every doc
+    // removed — are not swept here; that needs a per-repo owned-namespace,
+    // tracked as a follow-up.)
     await client.query(
       `DELETE FROM step WHERE src = 'test-doc' AND namespace = ANY($1)`,
       [namespaces],

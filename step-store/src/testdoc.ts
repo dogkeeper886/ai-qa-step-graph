@@ -4,7 +4,7 @@
  * Shared by the loader (#26) and the bind audit (#25) so there is a single
  * reading of the format — two parsers would be their own drift risk.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 export interface TestCase {
   tc: string;        // "TC-01"
@@ -30,9 +30,23 @@ export function parseFrontMatter(md: string): Record<string, string> {
   return fm;
 }
 
-/** Split a markdown table row into trimmed cells (drops the leading/trailing |). */
+/**
+ * Split a markdown table row into trimmed cells. Splits on *unescaped* pipes
+ * only and unescapes `\|`, so a cell may legitimately contain a literal pipe
+ * (a regex like `ok|healthy`, a shell `... || echo`).
+ */
 function tableCells(row: string): string[] {
-  return row.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map((c) => c.trim());
+  return row
+    .replace(/^\s*\|/, '')
+    .replace(/\|\s*$/, '')
+    .split(/(?<!\\)\|/)
+    .map((c) => c.replace(/\\\|/g, '|').trim());
+}
+
+/** The scenario docs in a tests/ dir, in stable order ([] if the dir is absent). */
+export function scenarioFiles(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'README.md').sort();
 }
 
 /** Parse a scenario file into its front-matter and cases (each with its steps). */
