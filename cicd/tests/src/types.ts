@@ -220,11 +220,3 @@ export interface RunConfig {
   /** Path to docker-compose directory for log collection */
   dockerComposePath: string;
 }
-
-/**
- * Default configuration values.
- */
-export const DEFAULT_CONFIG: Partial<RunConfig> = {
-  dryRun: false,
-  outputFormat: 'console',
-};

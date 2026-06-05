@@ -6,8 +6,7 @@
 #
 # After installation, in your project:
 #   cd cicd/tests && npm install
-#   npm test
-#   npm test -- --no-llm
+#   npm test          # assert-first; deterministic
 
 SHELL := /bin/bash
 .PHONY: install help uninstall check up down clean status query protect-main
@@ -37,8 +36,7 @@ help:
 	@echo ""
 	@echo "After installation:"
 	@echo "  cd <TARGET>/cicd/tests && npm install"
-	@echo "  npm test              # Run all tests"
-	@echo "  npm test -- --no-llm  # Run without LLM judge"
+	@echo "  npm test              # Run all tests (assert-first)"
 	@echo "  npm run list          # List available tests"
 	@echo ""
 	@echo "Stack lifecycle (this repo's step-store):"
@@ -154,13 +152,8 @@ install: check
 	@echo "  cd $(TARGET)/cicd/tests"
 	@echo "  npm install"
 	@echo ""
-	@echo "Configure Ollama URL:"
-	@echo "  Edit $(TARGET)/cicd/tests/src/config.ts"
-	@echo "  Set llm.defaultUrl to your Ollama server"
-	@echo ""
 	@echo "Run tests:"
-	@echo "  npm test              # All tests with LLM judge"
-	@echo "  npm test -- --no-llm  # Without LLM judge"
+	@echo "  npm test              # All tests (assert-first; deterministic)"
 	@echo "  npm run list          # List available tests"
 	@echo ""
 

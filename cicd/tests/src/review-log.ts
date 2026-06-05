@@ -91,11 +91,18 @@ async function main() {
   }
 
   const summary: TestSummary = JSON.parse(readFileSync(join(dir, 'summary.json'), 'utf8'));
+  const readReport = (p: string): TestReport | null => {
+    try {
+      return JSON.parse(readFileSync(p, 'utf8')) as TestReport;
+    } catch {
+      return null; // a truncated/corrupt report shouldn't abort triage of the others
+    }
+  };
   const failed: TestReport[] = summary.tests
     .map((id) => join(dir, `${id}.json`))
     .filter(existsSync)
-    .map((p) => JSON.parse(readFileSync(p, 'utf8')) as TestReport)
-    .filter((r) => !r.pass);
+    .map(readReport)
+    .filter((r): r is TestReport => r !== null && !r.pass);
 
   if (failed.length === 0) {
     console.log(`[review] ${dir}: no failures — nothing to review (this reviewer is on-fail only).`);
