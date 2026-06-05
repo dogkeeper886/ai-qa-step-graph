@@ -40,8 +40,9 @@ story_hash: 7474d8b6…           # sha256 of the linked story file at last sync
 ---
 ```
 
-- `namespace` divides tests by repo/user. The step-store filters on it so one tenant's
-  search never returns another's steps. This repo's own tests use `ai-qa-step-graph`.
+- `namespace` divides tests by repo/user. The step-store scopes search to one namespace
+  so a lookup returns only that repo/tenant's steps — a scoping filter, not a hard
+  security boundary. This repo's own tests use `ai-qa-step-graph`.
 - `story` + `story_hash` are the drift anchor: when the story file changes, its hash no
   longer matches and the scenario is flagged `stale` (#27).
 - The **`Script:` binding is per-TC, not in front-matter** — a scenario's cases can map
