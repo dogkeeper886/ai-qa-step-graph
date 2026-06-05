@@ -87,15 +87,20 @@ export async function addStep(
   conf = 1.0,
   src: string | null = null,
   provenance: unknown = null,
+  namespace: string | null = null,
 ): Promise<AddResult> {
   const v = toVectorLiteral(await embed(text));
-  // Resolve: is this the same step as one already stored?
+  // Resolve: is this the same step as one already stored *in the same namespace*?
+  // Scoped like searchStep — a live add (namespace NULL) resolves against
+  // canonical/other live steps, never against a namespaced test-doc row (which
+  // load-tests rebuilds, and would otherwise swallow the add).
   const { rows: near } = await pool.query(
     `SELECT id FROM step
       WHERE (embedding <=> $1::vector) <= $2
+        AND namespace IS NOT DISTINCT FROM $3
       ORDER BY embedding <=> $1::vector
       LIMIT 1`,
-    [v, DEFAULT_RESOLUTION_DISTANCE],
+    [v, DEFAULT_RESOLUTION_DISTANCE, namespace],
   );
   if (near.length) {
     const id = Number(near[0].id);
@@ -103,10 +108,10 @@ export async function addStep(
     return { id, resolved: true };
   }
   const { rows } = await pool.query(
-    `INSERT INTO step (text, embedding, conf, src, provenance)
-     VALUES ($1, $2::vector, $3, $4, $5::jsonb)
+    `INSERT INTO step (text, embedding, conf, src, namespace, provenance)
+     VALUES ($1, $2::vector, $3, $4, $5, $6::jsonb)
      RETURNING id`,
-    [text, v, conf, src, provenance === null ? null : JSON.stringify(provenance)],
+    [text, v, conf, src, namespace, provenance === null ? null : JSON.stringify(provenance)],
   );
   return { id: Number(rows[0].id), resolved: false };
 }
