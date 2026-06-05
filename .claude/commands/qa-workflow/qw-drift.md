@@ -14,7 +14,7 @@ this looks, deterministically, every run.
 
 Fits in the qa-workflow:
 
-    … → qw-run → [human] → dw-merge
+    … → qw-run → [human] → dw-merge   (qw-run = `make up` + the cicd runner, not a slash command)
                     └──────────────► qw-drift ──► back to qw-cases when stale
 
 ---

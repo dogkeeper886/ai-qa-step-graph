@@ -14,6 +14,7 @@ gates the written docs for quality and traceability.
 Fits in the qa-workflow:
 
     qw-plan → qw-review-plan → qw-cases → qw-review-cases → qw-bind → qw-run
+    (qw-run = `make up` + the cicd runner — a phase, not a slash command)
 
 ---
 
@@ -34,7 +35,7 @@ Fits in the qa-workflow:
         │
         └─► Step 3: Decision
             - PASS: docs do their job and trace back → proceed to `/qw-bind` (if not
-              yet bound) and `/qw-run`.
+              yet bound), then run it (`make up` + the cicd runner).
             - REVISE: fix the named doc — smallest change first — and re-check.
 
 ---

@@ -16,6 +16,7 @@ Action / Expected Result rows.
 Fits in the qa-workflow:
 
     qw-plan → qw-review-plan → qw-cases → qw-review-cases → qw-bind → qw-run
+    (qw-run = `make up` + the cicd runner — a phase, not a slash command)
 
 ---
 

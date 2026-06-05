@@ -15,6 +15,7 @@ deterministic audit and adds a human/agent pass for meaning.
 Fits in the qa-workflow:
 
     qw-plan → qw-cases → qw-bind → qw-review-bind → qw-run → qw-merge
+    (qw-run = `make up` + the cicd runner — a phase, not a slash command)
 
 ---
 

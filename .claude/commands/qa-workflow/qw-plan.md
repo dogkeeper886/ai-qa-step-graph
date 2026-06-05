@@ -15,6 +15,7 @@ that together cover the need, so `qw-cases` has a scoped plan to write against.
 Fits in the qa-workflow:
 
     qw-plan → qw-review-plan → qw-cases → qw-review-cases → qw-bind → qw-run
+    (qw-run = `make up` + the cicd runner — a phase, not a slash command)
 
 ---
 
