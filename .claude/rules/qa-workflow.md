@@ -26,7 +26,7 @@ and `reviewing-artifacts` enforce.
    qw-bind ───────► qw-review-bind      bind each case ↔ a cicd YAML (audit, not codegen)
             │
             ▼
-   qw-run            make up + the cicd dual-judge runner (not a new executor)
+   qw-run            make up + the cicd assert-first runner (not a new executor)
             │
             ▼
    [human reviews results] ──► dw-merge   green CI → CD (publish the MCP image)
@@ -52,7 +52,7 @@ No producer ships without a review covering its output.
 
 - **The story + issues** come from `dev-workflow` — a story gets both `dw-*` (code)
   and `qw-*` (tests), referencing the same `STORY-XXX`.
-- **The runner** is `cicd/tests/` (the dual-judge YAML executor) + `make up`.
+- **The runner** is `cicd/tests/` (the assert-first YAML runner) + `make up`.
 - **The store** is the STORY-001 step-store: `qw-cases` calls `search_step` to find a
   vetted step before authoring one; the loader (`load-tests`) indexes test docs back in.
 - **CI** composes with STORY-002 (`qw-drift` + `audit-bind` run as checks), not a new pipeline.
