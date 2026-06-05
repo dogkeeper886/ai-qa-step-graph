@@ -7,9 +7,13 @@
  *
  * Run: npm run smoke   (needs the stack up: `docker compose up -d`)
  */
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { pool } from './db.js';
+
+const PKG_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const SRC = 'smoke-test';
 
@@ -29,6 +33,7 @@ await pool.query('DELETE FROM step WHERE src = $1', [SRC]);
 const transport = new StdioClientTransport({
   command: 'npx',
   args: ['tsx', 'src/server.ts'],
+  cwd: PKG_ROOT,
   env: { ...process.env, MCP_TRANSPORT: 'stdio' } as Record<string, string>,
 });
 const client = new Client({ name: 'smoke', version: '0.1.0' });

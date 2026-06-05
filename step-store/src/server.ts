@@ -77,7 +77,10 @@ async function main() {
   if (transport === 'http') {
     // Stateless Streamable HTTP: a fresh server + transport per request.
     const port = Number(process.env.MCP_HTTP_PORT ?? 3000);
-    createServer(async (req, res) => {
+    if (!Number.isInteger(port) || port < 0 || port > 65535) {
+      throw new Error(`invalid MCP_HTTP_PORT: ${process.env.MCP_HTTP_PORT}`);
+    }
+    const http = createServer(async (req, res) => {
       const server = buildServer();
       const httpTransport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
       res.on('close', () => {
@@ -91,7 +94,12 @@ async function main() {
         console.error('[step-store] request error:', err);
         if (!res.headersSent) res.writeHead(500).end();
       }
-    }).listen(port, () => console.error(`[step-store] MCP over HTTP on :${port}`));
+    });
+    http.on('error', (err) => {
+      console.error('[step-store] HTTP server error:', err);
+      process.exit(1);
+    });
+    http.listen(port, () => console.error(`[step-store] MCP over HTTP on :${port}`));
   } else {
     await buildServer().connect(new StdioServerTransport());
     console.error('[step-store] MCP over stdio');

@@ -20,7 +20,11 @@ let extractor: Promise<FeatureExtractionPipeline> | null = null;
 export async function embed(text: string): Promise<number[]> {
   extractor ??= pipeline('feature-extraction', EMBED_MODEL);
   const out = await (await extractor)(text, { pooling: 'mean', normalize: true });
-  return Array.from(out.data as Float32Array);
+  const v = Array.from(out.data as Float32Array);
+  if (v.length !== EMBED_DIMS) {
+    throw new Error(`embedding has ${v.length} dims, expected ${EMBED_DIMS} (model ${EMBED_MODEL})`);
+  }
+  return v;
 }
 
 /** pgvector accepts a `'[a,b,c]'` text literal for a vector value. */
