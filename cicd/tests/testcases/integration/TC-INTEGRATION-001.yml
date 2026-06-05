@@ -1,26 +1,21 @@
+# Integration: the agent↔store channel over MCP (needs the stack up: `make up`).
 id: TC-INTEGRATION-001
-name: Service Health Check
+name: step-store channel — add, paraphrase hit, unrelated miss
 suite: integration
 priority: 1
-timeout: 30000
-dependencies:
-  - TC-BUILD-001
-tags: [integration, health]
+timeout: 120000
+dependencies: [TC-BUILD-001]
+tags: [integration, mcp]
 
 steps:
-  - name: Start services
-    command: docker compose up -d || echo "No docker-compose found"
-    timeout: 60000
-
-  - name: Wait for services
-    command: sleep 5
-
-  - name: Check health endpoint
-    command: curl -sf http://localhost:8080/health || echo "Health check skipped"
+  - name: Run the smoke test over MCP
+    command: npm --prefix step-store run --silent smoke
+    timeout: 90000
     expectPatterns:
-      - "ok|healthy|Health check skipped"
+      - "SMOKE PASSED"
+    rejectPatterns:
+      - "SMOKE FAILED"
 
 criteria: |
-  Verify services start and respond to health checks:
-  - Docker containers start successfully
-  - Health endpoint returns OK status
+  add_step then search_step returns the paraphrase (distance under threshold),
+  and an unrelated phrase is a clean miss — proven deterministically by smoke.ts.

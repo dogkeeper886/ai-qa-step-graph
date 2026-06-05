@@ -12,16 +12,15 @@ import path from 'path';
 import { mkdirSync, existsSync } from 'fs';
 import { TestLoader } from './loader.js';
 import { TestExecutor } from './executor.js';
-import { SimpleJudge, LLMJudge } from './judge/index.js';
+import { evaluateAll } from './verdict.js';
 import { JsonReporter, ConsoleReporter } from './reporter/index.js';
-import { RunConfig, DEFAULT_CONFIG } from './types.js';
-import { CONFIG } from './config.js';
+import { RunConfig } from './types.js';
 
 const program = new Command();
 
 program
   .name('test-runner')
-  .description('Dual-judge test framework with YAML-based test definitions')
+  .description('Assert-first test runner with YAML-based test definitions')
   .version('1.0.0');
 
 /**
@@ -34,9 +33,6 @@ program
   .option('-i, --id <id>', 'Run only the test with this ID')
   .option('-t, --tag <tag>', 'Run only tests with this tag')
   .option('--dry-run', 'Show what would run without executing', false)
-  .option('--no-llm', 'Skip LLM judging (simple judge only)')
-  .option('--judge-url <url>', 'Ollama URL for LLM judge', CONFIG.llm.defaultUrl)
-  .option('--judge-model <model>', 'Model to use for LLM judging', CONFIG.llm.defaultModel)
   .option('-o, --output-dir <dir>', 'Output directory for results')
   .option('-f, --format <format>', 'Output format (console, json)', 'console')
   .action(async (options) => {
@@ -46,7 +42,7 @@ program
     const testsDir = path.dirname(new URL(import.meta.url).pathname);
     const projectRoot = path.resolve(testsDir, '..', '..', '..');
     const testcasesDir = path.join(testsDir, '..', 'testcases');
-    const dockerDir = path.join(projectRoot, 'docker');
+    const dockerDir = projectRoot; // docker-compose.yml lives at the repo root
 
     // Generate output directory with timestamp
     const timestamp = startTime.toISOString().replace(/[:.]/g, '-').substring(0, 19);
@@ -62,9 +58,6 @@ program
       testId: options.id,
       tag: options.tag,
       dryRun: options.dryRun,
-      noLlm: !options.llm,
-      judgeUrl: options.judgeUrl,
-      judgeModel: options.judgeModel,
       outputDir,
       outputFormat: options.format as RunConfig['outputFormat'],
       workingDir: projectRoot,
@@ -75,7 +68,6 @@ program
     process.stderr.write(`[CONFIG] Docker compose: ${dockerDir}\n`);
     process.stderr.write(`[CONFIG] Testcases: ${testcasesDir}\n`);
     process.stderr.write(`[CONFIG] Output: ${outputDir}\n`);
-    process.stderr.write(`[CONFIG] LLM Judge: ${config.noLlm ? 'disabled' : config.judgeUrl}\n`);
 
     // Load test cases
     const loader = new TestLoader(testcasesDir);
@@ -137,35 +129,15 @@ program
     const executor = new TestExecutor(config);
     const results = await executor.executeAll(testCases);
 
-    // Run judges
-    process.stderr.write('\n[JUDGE] Running simple judge...\n');
-    const simpleJudge = new SimpleJudge();
-    const simpleJudgments = simpleJudge.judgeAll(results);
-
-    let llmJudgments = simpleJudgments.map((j) => ({
-      ...j,
-      reason: config.noLlm ? 'LLM judge disabled' : j.reason,
-    }));
-
-    if (!config.noLlm) {
-      process.stderr.write('[JUDGE] Running LLM judge...\n');
-      const llmJudge = new LLMJudge(config.judgeUrl, config.judgeModel);
-
-      const available = await llmJudge.isAvailable();
-      if (available) {
-        llmJudgments = await llmJudge.judgeResults(results);
-        await llmJudge.unloadModel();
-      } else {
-        process.stderr.write('[WARN] LLM judge not available, using simple judge results\n');
-      }
-    }
+    // Deterministic verdict — no judge layer, no LLM in the gate.
+    process.stderr.write('\n[VERDICT] Evaluating asserts...\n');
+    const verdicts = evaluateAll(results);
 
     // Generate and output reports
     const jsonReporter = new JsonReporter(outputDir);
     const { summary, reports } = jsonReporter.generateReports(
       results,
-      simpleJudgments,
-      llmJudgments,
+      verdicts,
       startTime,
       suiteName
     );

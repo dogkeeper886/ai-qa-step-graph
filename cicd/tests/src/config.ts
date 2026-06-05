@@ -16,25 +16,15 @@ export type Suite = string;
  */
 export const CONFIG = {
   // Project identification
-  projectName: 'my-project',
-  
+  projectName: 'ai-qa-step-graph',
+
   // Session file prefix for log collection
   sessionPrefix: 'test-session',
-  
+
   // Default timeouts (in milliseconds)
   defaultTimeout: 60000,
   defaultStepTimeout: 30000,
-  
-  // LLM Judge defaults
-  llm: {
-    defaultUrl: process.env.LLM_JUDGE_URL || 'http://localhost:11434',
-    defaultModel: process.env.LLM_JUDGE_MODEL || 'llama3:8b',
-    timeout: 300000,
-    stdoutLimit: 1000,
-    stderrLimit: 500,
-    logsLimit: 3000,
-  },
-  
+
   // Log collection settings
   logs: {
     cleanupAge: 24 * 60 * 60 * 1000, // 24 hours
@@ -48,26 +38,24 @@ export const CONFIG = {
 };
 
 /**
- * Error patterns to detect in logs.
- * The Simple Judge will fail tests if any of these patterns are found.
- * 
- * Customize for your project's specific error indicators.
+ * Catastrophic-failure markers scanned in logs as a last-resort safety net.
+ *
+ * Assert-first: the verdict comes from exit codes + per-step expect/reject
+ * patterns, so this list is deliberately narrow — only crashes that a passing
+ * exit code could mask. Broad words like "error"/"failed" are NOT here: real
+ * Postgres/MCP logs contain them benignly, and an explicit `rejectPatterns`
+ * on the step is the right tool when a specific string must be absent.
  */
 export const ERROR_PATTERNS: RegExp[] = [
-  /\berror\b/i,
-  /\bfailed\b/i,
-  /\bexception\b/i,
-  /\bpanic\b/i,
   /segmentation fault/i,
   /out of memory/i,
-  /OOM/,
+  /\bpanic:/i,
+  /\bFATAL\b/,
 ];
 
 /**
- * Patterns that indicate a test should NOT be failed.
- * Use these to exclude false positives from ERROR_PATTERNS.
+ * Patterns that indicate a test should NOT be failed (exclude false positives).
  */
 export const ERROR_EXCLUSIONS: RegExp[] = [
-  /error.*handled/i,
-  /expected.*error/i,
+  /expected.*(error|fatal)/i,
 ];

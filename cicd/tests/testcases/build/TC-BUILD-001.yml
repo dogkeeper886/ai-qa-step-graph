@@ -1,33 +1,19 @@
-# Example build test case
-# This demonstrates the YAML schema for defining test cases
-
+# Build: the step-store source typechecks.
 id: TC-BUILD-001
-name: Project Build Verification
+name: step-store typechecks
 suite: build
 priority: 1
 timeout: 120000
 dependencies: []
-tags: [build, compile]
+tags: [build]
 
 steps:
-  - name: Check Node.js version
-    command: node --version
-    expectPatterns:
-      - "v[0-9]+\\.[0-9]+\\.[0-9]+"
-
-  - name: Install dependencies
-    command: npm install
-    timeout: 60000
-
-  - name: Run build
-    command: npm run build
+  - name: TypeScript typecheck (step-store)
+    command: cd step-store && npx tsc --noEmit
     timeout: 90000
     rejectPatterns:
-      - "error"
-      - "failed"
+      - "error TS"
 
 criteria: |
-  Verify that the project builds successfully:
-  - Node.js is installed and accessible
-  - npm install completes without errors
-  - npm run build completes without errors
+  step-store compiles cleanly — no TypeScript errors. Verdict is exit 0 + no
+  "error TS" in output; no LLM involved.
