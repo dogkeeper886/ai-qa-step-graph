@@ -37,3 +37,4 @@ This repo will hold real, load-bearing code — the MCP server, the pgvector que
 - Pass/fail is **deterministic asserts** — the embedding + 0.35 threshold already turns "meaning" into a number, so the bundled dual-judge **and** simple-judge are trimmed; the verdict is step-level asserts.
 - The **only** LLM use is an **on-fail** log-reviewer (#37) — advisory triage, never the gate, built on the Anthropic SDK, with an env-var off-switch (and a clean skip when no key is configured).
 - `cicd/` is ours to modify freely; keep changes backport-friendly to the upstream template.
+- **Gating is manual** (#42): the CI workflows never auto-run, so there are no required status checks. The merge gate is `make ci` (suite + drift, on demand) plus human review.
