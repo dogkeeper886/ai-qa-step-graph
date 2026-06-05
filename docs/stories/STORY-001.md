@@ -8,7 +8,7 @@ So that it finds and reuses steps **by meaning** — not by hand-keyed ids — m
 
 ## The Need
 
-The hand-built step cache failed because it required **hand-keying meaning** — deciding that two differently-phrased steps are the same node by giving them the same id (r1-test-cases #237 / STORY-002). Meaning must be **derived, not authored**: a step's identity is its embedding, and cosine similarity collapses equivalent phrasings to one node (semantic entity resolution).
+The hand-built step cache failed because it required **hand-keying meaning** — deciding that two differently-phrased steps are the same node by giving them the same id. Meaning must be **derived, not authored**: a step's identity is its embedding, and cosine similarity collapses equivalent phrasings to one node (semantic entity resolution).
 
 For that to be usable, the agent needs **hands on the store**. The vectors live in **Postgres + pgvector**; **MCP** is how the agent reaches them — to ask "what confirmed step means *X*?" (hit), learn there's no match (miss), and add new confirmed steps. The connection has to be **set up properly once and just work** every session — if reaching the store is flaky or manual, the whole semantic approach is unusable. This is the first brick: a dependable agent ↔ vector-store channel. Everything else (the graph, authoring-by-retrieval) sits on top.
 
@@ -28,9 +28,9 @@ For that to be usable, the agent needs **hands on the store**. The vectors live 
 - **Where embedding happens:** in-database (a pgvector vectorizer) vs agent-side before insert; which embedding model + dimensions.
 - **Schema first cut:** what one "step" row holds (text, embedding, `conf`, `src`, provenance) — and whether edges/graph come now or later.
 - **Auth + local setup:** securing the HTTP endpoint; running Postgres locally (Docker?).
-- **Derived-index discipline:** how the store stays regenerable from canonical files (ADR-0001's "files stay canonical"), not a second source of truth.
+- **Derived-index discipline:** how the store stays regenerable from canonical files, not a second source of truth.
 
 ## Status
 
 - Created: 2026-06-05
-- Issues: none
+- Issues: #1, #2, #3, #4, #5, #6
