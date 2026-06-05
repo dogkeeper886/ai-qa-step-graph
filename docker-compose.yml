@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: stepstore
       POSTGRES_DB: stepstore
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - ./step-store/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - pgdata:/var/lib/postgresql/data
@@ -15,6 +15,23 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+
+  mcp:
+    build: ./step-store
+    environment:
+      DATABASE_URL: postgres://stepstore:stepstore@db:5432/stepstore
+      MCP_TRANSPORT: http
+      MCP_HTTP_PORT: "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(()=>process.exit(0)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
 
 volumes:
   pgdata:

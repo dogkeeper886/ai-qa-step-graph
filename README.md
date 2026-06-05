@@ -1,4 +1,111 @@
-# Dual-Judge Test Framework Template
+# ai-qa-step-graph
+
+An **agent-reachable pgvector step-store over MCP**. A QA agent finds and reuses test
+steps *by meaning* — a step's identity is its embedding, so cosine similarity surfaces
+equivalent phrasings even when the wording differs. Postgres + pgvector hold the
+vectors; an MCP server (`search_step` / `add_step`) is how the agent reaches them. See
+[`docs/stories/`](docs/stories/) for the product stories and
+[`step-store/README.md`](step-store/README.md) for the store's internals.
+
+## Quick start
+
+```bash
+make up                 # start Postgres + pgvector + the MCP server (HTTP :3000)
+make query Q="log in"   # quick semantic lookup
+make down               # stop the stack
+```
+
+The first `make up` builds the MCP image and bakes in the embedding model, so it
+takes a minute; later runs are fast.
+
+## Stack commands
+
+| Command | What it does |
+|---------|--------------|
+| `make up` | Start the stack (Postgres + pgvector + MCP), apply the schema idempotently, wait until healthy |
+| `make down` | Stop the stack |
+| `make clean` | Stop and wipe to a fresh empty state (drops the volume) |
+| `make status` | Show whether the stack is up and healthy (DB reachable, MCP responding) |
+| `make query Q="..."` | Quick semantic lookup against the store (default phrase: `log in`) |
+
+## Connecting an MCP client to the step-store
+
+The server speaks MCP over **stdio** (default, for a local agent) or **HTTP**
+(`MCP_TRANSPORT=http`, what `make up` runs on `:3000`). Pick the mode that fits.
+
+### Docker image (HTTP)
+
+`make up` builds and runs the server as the `mcp` Compose service at
+`http://localhost:3000/` — point any MCP client at that URL. To build/run it on its own:
+
+```bash
+docker build -t step-store ./step-store
+docker run --rm -p 3000:3000 --add-host=host.docker.internal:host-gateway \
+  -e DATABASE_URL=postgres://stepstore:stepstore@host.docker.internal:5432/stepstore step-store
+```
+
+### Run from source (dev, stdio)
+
+```bash
+cd step-store && npm install
+npm run server                       # stdio (default)
+MCP_TRANSPORT=http npm run server    # HTTP on :3000
+```
+
+### Claude Code (`claude mcp add`)
+
+stdio, from source:
+
+```bash
+claude mcp add step-store -- npm --prefix step-store run server
+```
+
+HTTP, against the running container (after `make up`):
+
+```bash
+claude mcp add --transport http step-store http://localhost:3000/
+```
+
+The repo also ships a committed [`.mcp.json`](.mcp.json) that registers the stdio
+server automatically when you open the project in Claude Code.
+
+### Cursor (`mcpServers` JSON)
+
+In `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project) — stdio from source:
+
+```json
+{
+  "mcpServers": {
+    "step-store": {
+      "command": "npm",
+      "args": ["--prefix", "step-store", "run", "server"],
+      "env": { "MCP_TRANSPORT": "stdio" }
+    }
+  }
+}
+```
+
+Or the HTTP (Docker) server, after `make up`:
+
+```json
+{
+  "mcpServers": {
+    "step-store": { "url": "http://localhost:3000/" }
+  }
+}
+```
+
+## Continuous integration
+
+CI reuses the **same** lifecycle targets — there is no separate code path. A workflow
+stands the stack up with `make up` (which fails fast via `--wait` if it can't become
+healthy), runs its tests, and tears down with `make down` / `make clean`. (A GitHub
+Actions workflow that calls these is planned — see [`docs/stories/`](docs/stories/).)
+
+---
+
+The rest of this document covers the **bundled dual-judge test framework template** —
+the testing tooling this repo ships and uses.
 
 A reusable, YAML-driven test framework with dual-judge verification (Simple + LLM) for CI/CD pipelines.
 
@@ -182,7 +289,7 @@ Additional Makefile commands:
 
 ```bash
 make help                                    # Show usage
-make clean TARGET=/path/to/project           # Remove framework from project
+make uninstall TARGET=/path/to/project       # Remove framework from project
 ```
 
 ## Configuration

@@ -12,15 +12,11 @@ import { dirname, join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { pool } from './db.js';
+import { parseToolResult as parse } from './mcp.js';
 
 const PKG_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const SRC = 'smoke-test';
-
-function parse(result: unknown): any {
-  const text = (result as any)?.content?.[0]?.text ?? '{}';
-  return JSON.parse(text);
-}
 
 function check(name: string, ok: boolean, detail: string) {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name} — ${detail}`);
