@@ -10,7 +10,7 @@
 #   npm test -- --no-llm
 
 SHELL := /bin/bash
-.PHONY: install help uninstall check up down clean status query
+.PHONY: install help uninstall check up down clean status query protect-main
 
 COMPOSE := docker compose
 
@@ -72,6 +72,11 @@ status:
 Q ?= log in
 query:
 	@npm --prefix step-store run --silent query -- "$(Q)"
+
+# Gate merges on the deterministic checks (STORY-002 #38). Run once the
+# `tests` + `qa-drift` checks have gone green on a PR. Needs repo admin + gh.
+protect-main:
+	@./cicd/scripts/protect-main.sh
 
 check:
 ifndef TARGET
