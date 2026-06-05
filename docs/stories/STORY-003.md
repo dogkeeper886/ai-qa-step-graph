@@ -34,4 +34,4 @@ Without a one-command path, every session re-invents the setup, manual steps get
 ## Status
 
 - Created: 2026-06-05
-- Issues: #12, #13, #14, #15, #16, #17
+- Issues: #12, #13, #14, #15, #17 (#16 re-homed to STORY-002 — it's the local↔CI parity task)
