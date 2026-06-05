@@ -52,9 +52,7 @@ help:
 # Operate the local step-store stack: Postgres + pgvector + the MCP server.
 
 up:
-	$(COMPOSE) up -d --build
-	@echo "Waiting for Postgres..."
-	@until $(COMPOSE) exec -T db pg_isready -U stepstore -d stepstore >/dev/null 2>&1; do sleep 1; done
+	$(COMPOSE) up -d --build --wait
 	@$(COMPOSE) exec -T db psql -U stepstore -d stepstore < step-store/schema.sql >/dev/null
 	@echo "Stack up: Postgres+pgvector and MCP server (HTTP :3000)."
 
