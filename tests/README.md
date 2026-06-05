@@ -11,8 +11,8 @@ is the [#21 design record](https://github.com/dogkeeper886/ai-qa-step-graph/issu
 
 ## One file = one scenario (TS), many cases (TC)
 
-Mirrors how real test cases are authored (see the r1-test-cases archive): a **scenario**
-groups related **cases**, each case a sequence of **steps**.
+Mirrors how QA test cases are conventionally authored: a **scenario** groups related
+**cases**, each case a sequence of **steps**.
 
 ```
 tests/
