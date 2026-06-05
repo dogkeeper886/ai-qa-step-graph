@@ -1,9 +1,9 @@
 # ai-qa-step-graph
 
 An **agent-reachable pgvector step-store over MCP**. A QA agent finds and reuses test
-steps *by meaning* — a step's identity is its embedding, and cosine similarity
-collapses equivalent phrasings to one node. Postgres + pgvector hold the vectors; an
-MCP server (`search_step` / `add_step`) is how the agent reaches them. See
+steps *by meaning* — a step's identity is its embedding, so cosine similarity surfaces
+equivalent phrasings even when the wording differs. Postgres + pgvector hold the
+vectors; an MCP server (`search_step` / `add_step`) is how the agent reaches them. See
 [`docs/stories/`](docs/stories/) for the product stories and
 [`step-store/README.md`](step-store/README.md) for the store's internals.
 
@@ -40,7 +40,8 @@ The server speaks MCP over **stdio** (default, for a local agent) or **HTTP**
 
 ```bash
 docker build -t step-store ./step-store
-docker run --rm -p 3000:3000 -e DATABASE_URL=postgres://stepstore:stepstore@host.docker.internal:5432/stepstore step-store
+docker run --rm -p 3000:3000 --add-host=host.docker.internal:host-gateway \
+  -e DATABASE_URL=postgres://stepstore:stepstore@host.docker.internal:5432/stepstore step-store
 ```
 
 ### Run from source (dev, stdio)
@@ -98,8 +99,8 @@ Or the HTTP (Docker) server, after `make up`:
 
 CI reuses the **same** lifecycle targets — there is no separate code path. A workflow
 stands the stack up with `make up` (which fails fast via `--wait` if it can't become
-healthy), runs its tests, and tears down with `make down` / `make clean`. (The live
-GitHub Actions workflow is wired up in STORY-002.)
+healthy), runs its tests, and tears down with `make down` / `make clean`. (A GitHub
+Actions workflow that calls these is planned — see [`docs/stories/`](docs/stories/).)
 
 ---
 
