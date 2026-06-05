@@ -33,4 +33,5 @@ For that to be usable, the agent needs **hands on the store**. The vectors live 
 ## Status
 
 - Created: 2026-06-05
-- Issues: #1, #2, #3, #4, #5, #6
+- First cut delivered: 2026-06-05 — #1–#6 merged (PR #7, #10)
+- Follow-ups open: #8 (entity resolution / dedup), #9 (idempotent schema bootstrap → STORY-003)
