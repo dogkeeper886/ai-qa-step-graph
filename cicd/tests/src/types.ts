@@ -44,9 +44,9 @@ export interface TestCase {
   tags?: string[];
   /** Test steps to execute */
   steps: TestStep[];
-  /** Human-readable criteria for LLM judge evaluation */
-  criteria: string;
-  /** Short goal statement for LLM judge context (optional) */
+  /** Human-readable intent (documentation only; the verdict is the asserts) */
+  criteria?: string;
+  /** Short goal statement (documentation only, optional) */
   goal?: string;
 }
 
@@ -106,7 +106,7 @@ export interface TestResult {
 // ============================================
 
 /**
- * A judge's verdict on a test result.
+ * The deterministic verdict on a test result (assert-first; no judge layer).
  */
 export interface Judgment {
   /** Test case ID */
@@ -153,9 +153,9 @@ export interface TestReport {
   name: string;
   /** Test suite */
   suite: string;
-  /** Final pass/fail (both judges must pass in dual mode) */
+  /** Pass/fail (deterministic asserts) */
   pass: boolean;
-  /** Final reason (combined from both judges) */
+  /** Reason for the verdict */
   reason: string;
   /** Execution duration in ms */
   duration: number;
@@ -163,10 +163,8 @@ export interface TestReport {
   steps: StepReportEntry[];
   /** Path to full log file */
   logFile: string;
-  /** Simple judge verdict */
-  simpleJudge: Judgment;
-  /** LLM judge verdict */
-  llmJudge: Judgment;
+  /** The deterministic verdict */
+  verdict: Judgment;
 }
 
 /**
@@ -187,16 +185,6 @@ export interface TestSummary {
   passed: number;
   /** Number of failing tests */
   failed: number;
-  /** Simple judge breakdown */
-  simple: {
-    passed: number;
-    failed: number;
-  };
-  /** LLM judge breakdown */
-  llm: {
-    passed: number;
-    failed: number;
-  };
   /** Environment info */
   environment: {
     hostname: string;
@@ -223,12 +211,6 @@ export interface RunConfig {
   tag?: string;
   /** Show what would run without executing */
   dryRun: boolean;
-  /** Skip LLM judging (simple judge only) */
-  noLlm: boolean;
-  /** URL of the LLM judge Ollama instance */
-  judgeUrl: string;
-  /** Model to use for LLM judging */
-  judgeModel: string;
   /** Output directory for results */
   outputDir: string;
   /** Output format */
@@ -238,12 +220,3 @@ export interface RunConfig {
   /** Path to docker-compose directory for log collection */
   dockerComposePath: string;
 }
-
-/**
- * Default configuration values.
- */
-export const DEFAULT_CONFIG: Partial<RunConfig> = {
-  dryRun: false,
-  noLlm: false,
-  outputFormat: 'console',
-};

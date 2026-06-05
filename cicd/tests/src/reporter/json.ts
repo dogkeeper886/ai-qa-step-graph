@@ -19,30 +19,21 @@ export class JsonReporter {
 
   generateReports(
     results: TestResult[],
-    simpleJudgments: Judgment[],
-    llmJudgments: Judgment[],
+    verdicts: Judgment[],
     startTime: Date,
-    suite: string
+    suite: string,
   ): { summary: TestSummary; reports: TestReport[] } {
     const endTime = new Date();
     const duration = endTime.getTime() - startTime.getTime();
 
-    const simpleMap = new Map(simpleJudgments.map((j) => [j.testId, j]));
-    const llmMap = new Map(llmJudgments.map((j) => [j.testId, j]));
+    const verdictMap = new Map(verdicts.map((v) => [v.testId, v]));
 
     const reports: TestReport[] = results.map((result) => {
-      const simple = simpleMap.get(result.testCase.id) || {
+      const verdict = verdictMap.get(result.testCase.id) || {
         testId: result.testCase.id,
         pass: false,
-        reason: 'No judgment',
+        reason: 'No verdict',
       };
-      const llm = llmMap.get(result.testCase.id) || {
-        testId: result.testCase.id,
-        pass: false,
-        reason: 'No judgment',
-      };
-
-      const pass = simple.pass && llm.pass;
 
       const steps: StepReportEntry[] = result.steps.map((step) => ({
         name: step.name,
@@ -58,20 +49,15 @@ export class JsonReporter {
         testId: result.testCase.id,
         name: result.testCase.name,
         suite: result.testCase.suite,
-        pass,
-        reason: pass
-          ? 'Both judges passed'
-          : `Simple: ${simple.reason}; LLM: ${llm.reason}`,
+        pass: verdict.pass,
+        reason: verdict.reason,
         duration: result.totalDuration,
         steps,
         logFile: result.logFile,
-        simpleJudge: simple,
-        llmJudge: llm,
+        verdict,
       };
     });
 
-    const simplePassed = simpleJudgments.filter((j) => j.pass).length;
-    const llmPassed = llmJudgments.filter((j) => j.pass).length;
     const passed = reports.filter((r) => r.pass).length;
 
     const summary: TestSummary = {
@@ -82,14 +68,6 @@ export class JsonReporter {
       total: results.length,
       passed,
       failed: results.length - passed,
-      simple: {
-        passed: simplePassed,
-        failed: results.length - simplePassed,
-      },
-      llm: {
-        passed: llmPassed,
-        failed: results.length - llmPassed,
-      },
       environment: {
         hostname: hostname(),
         nodeVersion: process.version,
@@ -123,8 +101,7 @@ export class JsonReporter {
         reason: r.reason,
         duration: r.duration,
         steps: r.steps,
-        simpleJudge: r.simpleJudge,
-        llmJudge: r.llmJudge,
+        verdict: r.verdict,
       })),
     };
     console.log(JSON.stringify(output, null, 2));

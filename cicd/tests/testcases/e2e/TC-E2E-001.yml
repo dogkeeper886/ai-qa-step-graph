@@ -1,22 +1,24 @@
+# E2E: ingest the test docs and find a step by meaning (needs the stack up).
 id: TC-E2E-001
-name: Basic End-to-End Flow
+name: load test docs and query by meaning
 suite: e2e
 priority: 1
-timeout: 60000
-dependencies:
-  - TC-INTEGRATION-001
-tags: [e2e, lifecycle]
+timeout: 120000
+dependencies: [TC-INTEGRATION-001]
+tags: [e2e]
 
 steps:
-  - name: Run E2E tests
-    command: npm run test:e2e || echo "No E2E tests configured"
-    timeout: 120000
+  - name: Index the test docs into the store
+    command: npm --prefix step-store run --silent load-tests
+    timeout: 90000
+    expectPatterns:
+      - "indexed [0-9]+ step"
 
-  - name: Cleanup
-    command: docker compose down || echo "No cleanup needed"
+  - name: Query by a paraphrase
+    command: make query Q="start the docker containers"
+    expectPatterns:
+      - "0\\.[0-9]+ +Start the services"
 
 criteria: |
-  Verify end-to-end functionality:
-  - E2E test suite executes successfully
-  - All critical user flows pass
-  - Resources are cleaned up properly
+  Test-doc steps are ingested into the pgvector store and findable by a
+  paraphrase (a nearest hit under the distance threshold).

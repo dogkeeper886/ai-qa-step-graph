@@ -1,13 +1,11 @@
 name: qa drift
 
 # STORY-004 #27: fail the build when a test has drifted from its story.
-# Deterministic + file-only (sha256 + binding audit) — no services needed, so
-# this is a thin, fast gate that composes with the rest of CI rather than
-# duplicating the dual-judge runner.
+# Deterministic + file-only (sha256 + binding audit) — no services needed.
+# Manual trigger (workflow_dispatch / workflow_call); run it on demand or from
+# a pipeline rather than on every push.
 
 on:
-  push:
-  pull_request:
   workflow_dispatch:
   workflow_call:
 
