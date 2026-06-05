@@ -1,12 +1,12 @@
 name: tests
 
 # STORY-002 #36: run the assert-first suite against a real Postgres+pgvector
-# stack on every push / PR. Local↔CI parity (#16): CI stands the stack up with
-# the *same* `make up` / `make down` a developer runs — no separate code path.
+# stack. Manual trigger (workflow_dispatch / workflow_call) — the full stack
+# build is heavy, so it runs on demand, not on every push. Local↔CI parity
+# (#16): CI stands the stack up with the *same* `make up` / `make down` a
+# developer runs — no separate code path.
 
 on:
-  push:
-  pull_request:
   workflow_dispatch:
   workflow_call:
 
