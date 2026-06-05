@@ -1,7 +1,7 @@
 {
   "name": "test-framework",
   "version": "1.0.0",
-  "description": "Dual-judge test framework with YAML-based test definitions",
+  "description": "Assert-first test runner with YAML-based test definitions",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -11,10 +11,11 @@
     "test:integration": "tsx src/cli.ts run --suite integration",
     "test:e2e": "tsx src/cli.ts run --suite e2e",
     "list": "tsx src/cli.ts list",
-    "dev": "tsx src/cli.ts"
+    "dev": "tsx src/cli.ts",
+    "review": "tsx src/review-log.ts"
   },
   "dependencies": {
-    "axios": "^1.7.2",
+    "@anthropic-ai/sdk": "^0.100.1",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "glob": "^10.3.10",
