@@ -1,7 +1,7 @@
 /**
  * STORY-004 #26: read the canonical test docs into the step-store.
  *
- * The markdown under tests/ is the source of truth (files stay canonical); the
+ * The markdown under docs/tests/ is the source of truth (files stay canonical); the
  * step-store is a *derived* index over it — the same discipline as regen.ts.
  * Each step row of a test doc (one `Action — Expected Result`) becomes one step
  * row, embedded for search, with provenance linking back to its {namespace, TS,
@@ -16,7 +16,7 @@ import { pool } from './db.js';
 import { embed, toVectorLiteral } from './embed.js';
 import { readScenario, scenarioFiles, stepText } from './testdoc.js';
 
-const TESTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tests');
+const TESTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs', 'tests');
 
 interface TestStep {
   text: string; // "Action — Expected Result"
@@ -44,11 +44,11 @@ function docSteps(file: string, relPath: string): TestStep[] {
   return out;
 }
 
-/** Read every tests/*.md (except README), in stable order. */
+/** Read every docs/tests/*.md (except README), in stable order. */
 function loadAll(): TestStep[] {
   const out: TestStep[] = [];
   for (const f of scenarioFiles(TESTS_DIR)) {
-    out.push(...docSteps(join(TESTS_DIR, f), `tests/${f}`));
+    out.push(...docSteps(join(TESTS_DIR, f), `docs/tests/${f}`));
   }
   return out;
 }
@@ -61,7 +61,7 @@ async function load() {
     await client.query('BEGIN');
     // Idempotent: drop the prior test-doc rows for the namespaces this load
     // covers, then re-insert. (Limitation: rows under a namespace no longer
-    // present in tests/ — e.g. a doc's namespace was renamed or every doc
+    // present in docs/tests/ — e.g. a doc's namespace was renamed or every doc
     // removed — are not swept here; that needs a per-repo owned-namespace,
     // tracked as a follow-up.)
     await client.query(

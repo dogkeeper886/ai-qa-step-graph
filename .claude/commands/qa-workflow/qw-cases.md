@@ -1,7 +1,7 @@
 # Write the Test Docs
 
 ```
-Turn a reviewed test plan into readable test docs in tests/ — reusing vetted
+Turn a reviewed test plan into readable test docs in docs/tests/ — reusing vetted
 steps from the store instead of re-inventing them.
 
 Target: the scenarios approved by /qw-review-plan for a STORY-XXX.
@@ -9,8 +9,8 @@ Target: the scenarios approved by /qw-review-plan for a STORY-XXX.
 ## PURPOSE
 
 The authoring producer of the qa-workflow — the test analogue of `dw-implement`.
-Writes each planned scenario as a `tests/TS-*.md` doc in the format contract
-(tests/README.md): front-matter + cases, each case a Steps table of
+Writes each planned scenario as a `docs/tests/TS-*.md` doc in the format contract
+(docs/tests/README.md): front-matter + cases, each case a Steps table of
 Action / Expected Result rows.
 
 Fits in the qa-workflow:
@@ -25,10 +25,10 @@ Fits in the qa-workflow:
     /qw-cases STORY-003
         │
         ├─► Step 1: One file per scenario
-        │   - Create tests/TS-NN-<slug>.md with front-matter:
+        │   - Create docs/tests/TS-NN-<slug>.md with front-matter:
         │       id, title, namespace, story (+ story_hash = sha256 of the story file),
         │       issue, status: green
-        │   - (Format and field meanings: tests/README.md.)
+        │   - (Format and field meanings: docs/tests/README.md.)
         │
         ├─► Step 2: Write each case (TC) — reuse before re-inventing (dogfood the store)
         │   - For each step you are about to write, ask the store first:

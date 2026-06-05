@@ -31,8 +31,8 @@ Fits in the qa-workflow:
         │   - Search the step-store for steps/cases already covering this:
         │       make query Q="<the behaviour>"
         │     so the plan reuses vetted coverage instead of duplicating it.
-        │   - List the tests/ scenarios already linked to this story:
-        │       grep -l 'story: STORY-XXX' tests/
+        │   - List the docs/tests/ scenarios already linked to this story:
+        │       grep -l 'story: STORY-XXX' docs/tests/
         │
         ├─► Step 3: Propose scenarios
         │   - Break the need into scenarios (TS-to-be), each:

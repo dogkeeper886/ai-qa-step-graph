@@ -1,4 +1,4 @@
-# `tests/` — the test-doc format
+# `docs/tests/` — the test-doc format
 
 Each test in this repo is a **readable markdown document** that lives here, close to
 the story it verifies. The markdown is the *canonical* artifact — humans read and
@@ -6,7 +6,7 @@ review it, and it is the source of truth for **why** a test exists and **what** 
 checks. The executable (`cicd/tests/testcases/**/*.yml`) is the source of truth for
 **how it runs**. The two are bound, and a later gate (#25) audits that they agree.
 
-This format realizes [STORY-004](../docs/stories/STORY-004.md); the flow it belongs to
+This format realizes [STORY-004](../stories/STORY-004.md); the flow it belongs to
 is the [#21 design record](https://github.com/dogkeeper886/ai-qa-step-graph/issues/21).
 
 ## One file = one scenario (TS), many cases (TC)
@@ -15,7 +15,7 @@ Mirrors how QA test cases are conventionally authored: a **scenario** groups rel
 **cases**, each case a sequence of **steps**.
 
 ```
-tests/
+docs/tests/
   TS-01-stack-lifecycle.md     # a scenario: TC-01, TC-02, … each with a Steps table
   TS-02-….md
 ```
@@ -68,7 +68,7 @@ as one `Action → Expected Result` step.
 
 ## Traceability (both directions)
 
-- **story → tests:** `grep -l 'story: STORY-XXX' tests/`
+- **story → tests:** `grep -l 'story: STORY-XXX' docs/tests/`
 - **test → story / script:** the front-matter `story:` and each case's `Script:` line.
 - **script → test:** the `Script:` path points at the YAML; its `id` reaches back.
 

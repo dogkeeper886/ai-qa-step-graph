@@ -1,13 +1,13 @@
 ---
 paths:
-  - "tests/**/*.md"
+  - "docs/tests/**/*.md"
 ---
 
 # qa-workflow
 
 A sibling to `dev-workflow`. Where dev-workflow turns a need into shipped code,
 qa-workflow turns a story (or an on-request target) into a **trustworthy test** —
-written as readable markdown in `tests/`, bound to the `cicd/` runner, and watched
+written as readable markdown in `docs/tests/`, bound to the `cicd/` runner, and watched
 for drift. Each producer is paired with a review, the same discipline `dev-workflow`
 and `reviewing-artifacts` enforce.
 
@@ -20,7 +20,7 @@ and `reviewing-artifacts` enforce.
    qw-plan ───────► qw-review-plan      what to test — scenarios that cover the story
             │
             ▼
-   qw-cases ──────► qw-review-cases     write tests/TS-*.md (the #23 format);
+   qw-cases ──────► qw-review-cases     write docs/tests/TS-*.md (the #23 format);
             │                            dogfood search_step first — reuse a vetted step
             ▼
    qw-bind ───────► qw-review-bind      bind each case ↔ a cicd YAML (audit, not codegen)
@@ -57,4 +57,4 @@ No producer ships without a review covering its output.
   vetted step before authoring one; the loader (`load-tests`) indexes test docs back in.
 - **CI** composes with STORY-002 (`qw-drift` + `audit-bind` run as checks), not a new pipeline.
 
-The format a test doc must follow is `tests/README.md`.
+The format a test doc must follow is `docs/tests/README.md`.

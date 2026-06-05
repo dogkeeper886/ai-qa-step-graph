@@ -4,7 +4,7 @@
 Check each test doc does one clear job, has observable steps, and traces back to
 its story — before it is bound and run.
 
-Target: the tests/TS-*.md docs written by /qw-cases for a STORY-XXX.
+Target: the docs/tests/TS-*.md docs written by /qw-cases for a STORY-XXX.
 
 ## PURPOSE
 
@@ -27,7 +27,7 @@ Fits in the qa-workflow:
         │   - [ ] Front-matter complete and resolvable: story file exists,
         │         story_hash matches it, namespace set, status present.
         │   - [ ] Each step's Expected Result is observable — checkable, not vague.
-        │   - [ ] Conforms to the format contract (tests/README.md).
+        │   - [ ] Conforms to the format contract (docs/tests/README.md).
         │
         ├─► Step 2: Traceability
         │   - [ ] story → doc → (script, via qw-bind) resolves both ways.

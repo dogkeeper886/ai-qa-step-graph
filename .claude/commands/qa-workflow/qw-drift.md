@@ -4,7 +4,7 @@
 Surface every test that no longer matches what it verifies — before a stale
 test passes quietly and a green build lies.
 
-Target: all tests/ docs (runs in CI and on demand).
+Target: every test doc under docs/tests/ (runs in CI and on demand).
 
 ## PURPOSE
 
