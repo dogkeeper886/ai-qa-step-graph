@@ -63,7 +63,9 @@ function buildServer(): McpServer {
     {
       title: 'Add a confirmed step',
       description:
-        'Add a confirmed step so it becomes findable by meaning on the next search.',
+        'Add a confirmed step so it becomes findable by meaning on the next search. ' +
+        'If the step already exists by meaning, the existing node is reinforced ' +
+        'instead of duplicated (the result says whether it was added or resolved).',
       inputSchema: {
         text: z.string().describe('the step phrase'),
         conf: z.number().min(0).max(1).optional().describe('confidence (default 1.0)'),
@@ -72,8 +74,13 @@ function buildServer(): McpServer {
       },
     },
     async ({ text, conf, src, provenance }) => {
-      const id = await addStep(text, conf ?? 1.0, src ?? null, provenance ?? null);
-      return { content: [{ type: 'text', text: JSON.stringify({ added: true, id }, null, 2) }] };
+      const { id, resolved } = await addStep(text, conf ?? 1.0, src ?? null, provenance ?? null);
+      // added=true → new node; resolved=true → reinforced an existing one.
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify({ added: !resolved, id, resolved }, null, 2) },
+        ],
+      };
     },
   );
 

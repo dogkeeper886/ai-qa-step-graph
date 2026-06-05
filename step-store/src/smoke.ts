@@ -39,7 +39,19 @@ const added = parse(await client.callTool({
   name: 'add_step',
   arguments: { text: 'click the login button', src: SRC, provenance: { test: 'smoke' } },
 }));
-check('add_step', added.added === true && typeof added.id === 'number', `id=${added.id}`);
+check('add_step', typeof added.id === 'number', `id=${added.id}`);
+
+// Entity resolution: a near-identical phrasing reinforces the same node rather
+// than creating a duplicate — the two adds converge on one node id.
+const again = parse(await client.callTool({
+  name: 'add_step',
+  arguments: { text: 'click on the login button', src: SRC, provenance: { test: 'smoke' } },
+}));
+check(
+  'add_step resolves to one node (no duplicate)',
+  again.resolved === true && again.id === added.id,
+  `resolved=${again.resolved} id=${again.id} (first id=${added.id})`,
+);
 
 const hit = parse(await client.callTool({
   name: 'search_step',
