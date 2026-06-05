@@ -10,7 +10,7 @@
 #   npm test -- --no-llm
 
 SHELL := /bin/bash
-.PHONY: install help uninstall check up down clean status
+.PHONY: install help uninstall check up down clean status query
 
 COMPOSE := docker compose
 
@@ -46,6 +46,7 @@ help:
 	@echo "  make down      # Stop the stack"
 	@echo "  make clean     # Stop and wipe to a fresh empty state (drops the volume)"
 	@echo "  make status    # Show whether the stack is up and healthy"
+	@echo "  make query Q=\"...\"  # Quick semantic lookup against the store"
 
 # ─── Stack lifecycle (STORY-003) ────────────────────────────────────────────
 # Operate the local step-store stack: Postgres + pgvector + the MCP server.
@@ -69,6 +70,10 @@ status:
 	@$(COMPOSE) ps --format '  {{.Service}}: {{.State}} ({{.Health}})' 2>/dev/null | grep . || echo "  (stack is down)"
 	@printf "Postgres:         "; $(COMPOSE) exec -T db pg_isready -U stepstore -d stepstore >/dev/null 2>&1 && echo "reachable" || echo "down"
 	@printf "MCP (HTTP :3000): "; node -e "fetch('http://localhost:3000/').then(()=>process.exit(0)).catch(()=>process.exit(1))" >/dev/null 2>&1 && echo "responding" || echo "down"
+
+Q ?= log in
+query:
+	@npm --prefix step-store run --silent query -- "$(Q)"
 
 check:
 ifndef TARGET

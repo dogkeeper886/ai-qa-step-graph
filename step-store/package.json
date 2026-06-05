@@ -8,6 +8,7 @@
     "embed": "tsx src/embed.ts",
     "server": "tsx src/server.ts",
     "regen": "tsx src/regen.ts",
+    "query": "tsx src/query.ts",
     "smoke": "tsx src/smoke.ts"
   },
   "dependencies": {
