@@ -10,11 +10,12 @@
  *
  * Run: npm run load-tests   (needs the stack up: `make up`)
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { pool } from './db.js';
 import { embed, toVectorLiteral } from './embed.js';
+import { readScenario, stepText } from './testdoc.js';
 
 const TESTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tests');
 
@@ -24,69 +25,31 @@ interface TestStep {
   provenance: Record<string, unknown>;
 }
 
-/** Parse `key: value` front-matter between the first pair of `---` fences. */
-function parseFrontMatter(md: string): Record<string, string> {
-  const m = md.match(/^---\n([\s\S]*?)\n---/);
-  const fm: Record<string, string> = {};
-  if (!m) return fm;
-  for (const line of m[1].split('\n')) {
-    const kv = line.match(/^([A-Za-z_]+):\s*(.*?)\s*$/);
-    if (kv) fm[kv[1]] = kv[2];
-  }
-  return fm;
-}
-
-/** Split a markdown table row into trimmed cells (drops the leading/trailing |). */
-function tableCells(row: string): string[] {
-  return row.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map((c) => c.trim());
-}
-
-/** Pull every step out of one scenario file. */
-function parseDoc(file: string, relPath: string): TestStep[] {
-  const md = readFileSync(file, 'utf8');
-  const fm = parseFrontMatter(md);
+/** Pull every step out of one scenario file, with parent-linkage provenance. */
+function docSteps(file: string, relPath: string): TestStep[] {
+  const { frontMatter: fm, cases } = readScenario(file);
   const namespace = fm.namespace ?? 'default';
-  const steps: TestStep[] = [];
-
-  // Each `### TC-NN: title` starts a case; its block runs to the next ### or EOF.
-  const tcRe = /^###\s+(TC-\d+):\s*(.*)$/gm;
-  const matches = [...md.matchAll(tcRe)];
-  for (let i = 0; i < matches.length; i++) {
-    const tc = matches[i][1];
-    const tcTitle = matches[i][2].trim();
-    const start = matches[i].index! + matches[i][0].length;
-    const end = i + 1 < matches.length ? matches[i + 1].index! : md.length;
-    const block = md.slice(start, end);
-
-    const script = block.match(/\*\*Script:\*\*\s*(\S+)/)?.[1] ?? null;
-
-    let n = 0;
-    for (const line of block.split('\n')) {
-      if (!line.trim().startsWith('|')) continue;
-      const cells = tableCells(line);
-      // skip header (`# | Action | …`) and separator (`---`); data rows start with a number
-      if (cells.length < 3 || !/^\d+$/.test(cells[0])) continue;
-      n++;
-      const [, action, expected] = cells;
-      const text = expected && expected !== '—' ? `${action} — ${expected}` : action;
-      steps.push({
-        text,
+  const out: TestStep[] = [];
+  for (const c of cases) {
+    c.steps.forEach((s, i) => {
+      out.push({
+        text: stepText(s),
         namespace,
         provenance: {
-          namespace, ts: fm.id, tc, tc_title: tcTitle,
-          story: fm.story ?? null, script, doc: relPath, step: n,
+          namespace, ts: fm.id, tc: c.tc, tc_title: c.title,
+          story: fm.story ?? null, script: c.script, doc: relPath, step: i + 1,
         },
       });
-    }
+    });
   }
-  return steps;
+  return out;
 }
 
 /** Read every tests/*.md (except README), in stable order. */
 function loadAll(): TestStep[] {
   const out: TestStep[] = [];
   for (const f of readdirSync(TESTS_DIR).filter((f) => f.endsWith('.md') && f !== 'README.md').sort()) {
-    out.push(...parseDoc(join(TESTS_DIR, f), `tests/${f}`));
+    out.push(...docSteps(join(TESTS_DIR, f), `tests/${f}`));
   }
   return out;
 }
