@@ -36,7 +36,7 @@ criteria: |
 
 ## Tags
 
-Tags enable per-feature CI workflows. Use feature names or capability areas:
+Tags enable filtering a run to a subset of cases. Use feature names or capability areas:
 
 ```yaml
 tags: [auth, api]          # Feature tags

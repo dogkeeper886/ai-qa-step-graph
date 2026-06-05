@@ -97,17 +97,19 @@ Or the HTTP (Docker) server, after `make up`:
 
 ## Continuous integration
 
-CI reuses the **same** lifecycle targets — there is no separate code path. A workflow
-stands the stack up with `make up` (which fails fast via `--wait` if it can't become
-healthy), runs its tests, and tears down with `make down` / `make clean`. (A GitHub
-Actions workflow that calls these is planned — see [`docs/stories/`](docs/stories/).)
+CI reuses the **same** lifecycle targets — there is no separate code path. The `tests`
+workflow stands the stack up with `make up` (which fails fast via `--wait` if it can't
+become healthy), runs the assert-first suite, and tears down with `make down`. The
+workflows are **manual** (`workflow_dispatch`); `make ci` is the on-demand merge gate.
 
 ---
 
-The rest of this document covers the **bundled dual-judge test framework template** —
+The rest of this document covers the **bundled assert-first test framework** —
 the testing tooling this repo ships and uses.
 
-A reusable, YAML-driven test framework with dual-judge verification (Simple + LLM) for CI/CD pipelines.
+A YAML-driven test runner whose verdict is **deterministic asserts** — exit codes plus
+expected/rejected patterns. An LLM is used **only on failure**, as advisory log triage
+(`npm run review`), and never decides pass/fail.
 
 ## Project Goal
 
@@ -115,10 +117,10 @@ This test framework design template was extracted from production MCP server pro
 
 ### Why This Framework?
 
-Traditional testing often relies solely on exit codes, which can miss subtle failures where a process completes "successfully" but produces incorrect results. This framework addresses that gap by combining:
+Tests assert deterministically — exit codes, expected/rejected patterns, error detection — so the gate is fast and reproducible with no LLM in the loop. When a test *fails*, an optional on-demand log review (Anthropic SDK) suggests likely causes; it's advisory triage, never the verdict.
 
-- **Deterministic Verification**: Fast, reliable checks for exit codes, expected patterns, and error detection
-- **Semantic Analysis**: LLM-powered evaluation that understands whether test output actually meets human-readable criteria
+- **Deterministic verdict**: exit codes, expected patterns, rejected patterns, fatal-error detection
+- **On-fail triage (optional)**: an LLM reads a failed test's log and surfaces likely causes — advisory, run on demand
 
 ### Design Philosophy
 
@@ -136,22 +138,23 @@ The framework is built around three core principles:
 |------------|---------|
 | **TypeScript** | Strict type safety and modern async/await patterns |
 | **YAML** | Declarative test case definitions |
-| **Ollama** | Local LLM integration for semantic judging |
+| **Anthropic SDK** | On-fail log triage (optional, advisory; points at Claude or local Ollama via `ANTHROPIC_BASE_URL`) |
 | **Docker Compose** | Log collection with marker-based extraction |
 | **GitHub Actions** | CI/CD pipeline orchestration |
 
 ### Notable Features
 
-- **Dual-Judge System**: Both simple (fast) and LLM (semantic) judges must pass
+- **Assert-first verdict**: deterministic exit-code + pattern checks decide pass/fail; no LLM in the gate
+- **On-fail AI log-reviewer**: `npm run review` triages failed runs (advisory, off by default)
 - **YAML-Driven Tests**: Tests defined as configuration, not code
-- **Tag-Based Filtering**: Filter tests by feature tag via `--tag` for per-feature CI workflows
+- **Tag-Based Filtering**: Filter tests by feature tag via `--tag`
 - **Variable Capture**: Extract values from step output and pass to later steps via `{{variable}}`
 - **Environment Variable Substitution**: Variables fall back to `process.env` for CI-friendly patterns
 - **Dependency Resolution**: Tests can depend on other tests passing first
 - **Log Collection with Markers**: Precise extraction of logs per test from Docker streams
 - **MCP Client**: Test MCP server tools with configurable server command
 - **Claude Skills**: AI-assisted test authoring via `/ci-testcase`, `/ci-run`, `/add-tool`
-- **Per-Feature CI Workflows**: Composable GitHub Actions with reusable test runner
+- **Manual CI gate**: `make ci` (stack up + suite + drift) runs on demand; workflows are manual-trigger
 - **Installable Template**: Add to any project via `/install` or `make install`
 - **Flexible Output**: Console (colored) and JSON formats for CI consumption
 
@@ -200,29 +203,13 @@ The framework is built around three core principles:
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                           DUAL-JUDGE VERIFICATION                            │
+│                       DETERMINISTIC VERDICT (verdict.ts)                      │
 ├──────────────────────────────────────────────────────────────────────────────┤
+│   exit code == 0  ·  expected patterns found  ·  no rejected patterns  ·      │
+│   no fatal-error markers        →  pass / fail   (no LLM in the gate)         │
 │                                                                              │
-│    ┌─────────────────────────┐         ┌─────────────────────────┐          │
-│    │      Simple Judge       │         │       LLM Judge         │          │
-│    │    (simple-judge.ts)    │         │    (llm-judge.ts)       │          │
-│    ├─────────────────────────┤         ├─────────────────────────┤          │
-│    │ Exit code == 0          │         │ Semantic analysis       │          │
-│    │ Expected patterns       │         │ Criteria evaluation     │          │
-│    │ No rejected patterns    │         │ Context understanding   │          │
-│    │ No error patterns       │         │ Evidence extraction     │          │
-│    ├─────────────────────────┤         ├─────────────────────────┤          │
-│    │ Speed: Milliseconds     │         │ Speed: Seconds          │          │
-│    │ Mode: Deterministic     │         │ Mode: AI-powered        │          │
-│    └───────────┬─────────────┘         └───────────┬─────────────┘          │
-│                │                                   │                         │
-│                │         ┌───────────┐             │                         │
-│                └────────▶│  BOTH     │◀────────────┘                         │
-│                          │  MUST     │                                       │
-│                          │  PASS     │                                       │
-│                          └─────┬─────┘                                       │
-│                                │                                             │
-└────────────────────────────────┼─────────────────────────────────────────────┘
+│   on failure (optional, advisory):  review-log.ts → LLM triages the log      │
+└────────────────────────────────┬─────────────────────────────────────────────┘
                                  │
                                  ▼
                     ┌────────────────────────┐
@@ -243,21 +230,18 @@ The framework is built around three core principles:
                     └────────────────────────┘
 ```
 
-### Why Dual-Judge?
+### Why assert-first?
 
-Traditional tests only check exit codes. A process can exit with code 0 but produce incorrect results:
+The verdict is deterministic, so the gate is fast, reproducible, and needs no model or network. Each step declares what must (and must not) appear, and a test passes only when every step exits 0, every expected pattern is found, no rejected pattern appears, and no fatal-error marker shows up.
 
-| Scenario | Exit Code | Simple Judge | LLM Judge |
-|----------|-----------|--------------|-----------|
-| Command fails | 1 | Catches | Catches |
-| "Error" in output | 0 | Catches | Catches |
-| Wrong output format | 0 | Misses | Catches |
-| Incomplete results | 0 | Misses | Catches |
-| Semantic mismatch | 0 | Misses | Catches |
+| Check | Decided by |
+|-------|------------|
+| Command exits non-zero | exit code |
+| A required string is missing | `expectPatterns` |
+| A forbidden string appears (`Error`, a bad value, …) | `rejectPatterns` |
+| A crash leaks into the logs | fatal-error scan (`panic:`, `FATAL`, segfault, OOM) |
 
-The LLM judge reads the criteria from YAML and evaluates whether the actual output semantically satisfies the requirements—catching failures that pattern matching alone would miss.
-
-Use `--no-llm` to skip LLM judging for faster CI feedback when Ollama is unavailable.
+When a meaning-based check can't be reduced to a pattern, encode it as a numeric assert instead (e.g. this repo asserts semantic search by *cosine distance < threshold*). The one place an LLM helps is **after a failure**: `npm run review` reads the failed test's log and suggests likely causes — advisory triage, never the verdict.
 
 ## Quick Start
 
@@ -302,101 +286,59 @@ export const SUITES: string[] = ['build', 'integration', 'e2e'];
 
 export const CONFIG = {
   projectName: 'your-project',
-  
-  // LLM Judge settings (overridable via env vars)
-  llm: {
-    defaultUrl: process.env.LLM_JUDGE_URL || 'http://localhost:11434',
-    defaultModel: process.env.LLM_JUDGE_MODEL || 'llama3:8b',
-    timeout: 300000,
-    stdoutLimit: 1000,
-    stderrLimit: 500,
-    logsLimit: 3000,
-  },
+  sessionPrefix: 'test-session',
+  defaultTimeout: 60000,
+  defaultStepTimeout: 30000,
+  logs: { cleanupAge: 24 * 60 * 60 * 1000, maxBuffer: 50 * 1024 * 1024 },
 };
 
-// Project-specific error patterns
+// Fatal-error markers scanned in logs (narrow on purpose — explicit
+// rejectPatterns on a step are the right tool for a specific forbidden string)
 export const ERROR_PATTERNS: RegExp[] = [
-  /\berror\b/i,
-  /\bfailed\b/i,
+  /segmentation fault/i,
+  /out of memory/i,
+  /\bpanic:/i,
+  /\bFATAL\b/,
   // Add your patterns...
 ];
 ```
 
 ### Environment Variables
 
-For CI environments, override LLM judge settings without editing source:
+The on-fail log-reviewer (`npm run review`) is configured by environment, not source:
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `LLM_JUDGE_URL` | Ollama endpoint | `http://localhost:11434` |
-| `LLM_JUDGE_MODEL` | Model for judging | `llama3:8b` |
-
-**Tip:** If your project tests an Ollama instance (port 11434), run the LLM judge on a separate port (e.g., 11435) to avoid GPU memory contention.
+| `AI_REVIEW` | set to `off` to disable the reviewer entirely | (on) |
+| `AI_REVIEW_MODEL` | model for triage | `claude-opus-4-8` |
+| `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` | credential — with none set, the reviewer skips cleanly | — |
+| `ANTHROPIC_BASE_URL` | point at a local Anthropic-compatible endpoint, e.g. Ollama `http://localhost:11434` | Anthropic API |
 
 ## Running Tests
 
 ```bash
 cd your-project/cicd/tests
 
-npm test                    # Run all tests with LLM judge
-npm test -- --no-llm        # Run without LLM (faster)
-npm test -- --suite build   # Run specific suite
-npm test -- --id TC-001     # Run specific test
+npm test                    # Run all tests (assert-first; deterministic)
+npm test -- --suite build   # Run a specific suite
+npm test -- --id TC-001     # Run a specific test
 npm test -- --tag auth      # Run tests tagged 'auth'
 npm test -- --dry-run       # Preview what would run
 npm run list                # List available tests
 npm run list -- --tag auth  # List tests by tag
 
-# Override Ollama settings via CLI
-npm test -- --judge-url http://host:11434 --judge-model gemma3:12b
+npm run review              # On a failed run: AI log triage (advisory, optional)
 ```
 
-## CI Workflow Patterns
+## CI
 
-The template includes composable GitHub Actions workflows:
+CI runs **on demand** — no workflow auto-runs in this repo:
 
-```
-.github/workflows/
-├── build.yml                # Standalone build step
-├── test-run.yml             # Reusable test runner (supports --tag and --suite)
-├── test-feature-example.yml # Example per-feature workflow (~25 lines)
-├── ci.yml                   # Full pipeline: build -> tests in parallel
-├── test-pipeline.yml        # Legacy suite-based pipeline
-└── test-suite.yml           # Legacy reusable suite runner
-```
+- `.github/workflows/tests.yml` — stands up Postgres+pgvector and runs the suite (manual / `workflow_dispatch`).
+- `.github/workflows/qa-drift.yml` — file-only story↔test drift + binding gate (manual).
+- `make ci` — the local merge gate: stack up → suite → drift, on demand.
 
-### Per-Feature Pattern (Recommended)
-
-Each feature gets a thin workflow file that delegates to `test-run.yml`:
-
-```yaml
-# .github/workflows/test-auth.yml
-name: "Test: Auth"
-on:
-  workflow_dispatch:
-    inputs:
-      judge_mode:
-        type: choice
-        options: ["simple", "dual"]
-  workflow_call:
-    inputs:
-      judge_mode:
-        type: string
-jobs:
-  test:
-    uses: ./.github/workflows/test-run.yml
-    with:
-      tag: auth
-      judge_mode: ${{ inputs.judge_mode }}
-```
-
-**Adding a new feature test:**
-1. Tag your test cases: `tags: [my-feature]`
-2. Copy `test-feature-example.yml` to `test-my-feature.yml`
-3. Change the `tag` value
-4. Add as a job in `ci.yml`
-
-Configure `LLM_JUDGE_URL` and `LLM_JUDGE_MODEL` as GitHub repository variables (`Settings > Variables > Actions`).
+There are no required status checks; a green `make ci` plus human review is the gate.
 
 ## MCP Testing
 
@@ -469,7 +411,7 @@ criteria: |
 
 ### Tags
 
-Tags enable per-feature filtering and CI workflow splitting:
+Tags enable filtering a run to a subset of cases:
 
 ```yaml
 tags: [auth, api]          # Feature tags
@@ -554,12 +496,8 @@ your-project/
 │   │   └── format-results.sh
 │   └── results/
 └── .github/workflows/
-    ├── build.yml                # Standalone build
-    ├── test-run.yml             # Reusable test runner
-    ├── test-feature-example.yml # Per-feature template
-    ├── ci.yml                   # Full pipeline orchestrator
-    ├── test-pipeline.yml        # Legacy pipeline
-    └── test-suite.yml           # Legacy suite runner
+    ├── tests.yml               # assert-first suite on a real stack (manual)
+    └── qa-drift.yml            # story↔test drift + binding gate (manual)
 ```
 
 ## License
