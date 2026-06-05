@@ -10,7 +10,7 @@
 #   npm test -- --no-llm
 
 SHELL := /bin/bash
-.PHONY: install help clean check up down
+.PHONY: install help uninstall check up down clean
 
 COMPOSE := docker compose
 
@@ -44,6 +44,7 @@ help:
 	@echo "Stack lifecycle (this repo's step-store):"
 	@echo "  make up        # Start Postgres+pgvector and the MCP server"
 	@echo "  make down      # Stop the stack"
+	@echo "  make clean     # Stop and wipe to a fresh empty state (drops the volume)"
 
 # ─── Stack lifecycle (STORY-003) ────────────────────────────────────────────
 # Operate the local step-store stack: Postgres + pgvector + the MCP server.
@@ -57,6 +58,10 @@ up:
 
 down:
 	$(COMPOSE) down
+
+clean:
+	$(COMPOSE) down -v
+	@echo "Stack reset: containers and the pgdata volume removed (empty state)."
 
 check:
 ifndef TARGET
@@ -144,9 +149,9 @@ install: check
 	@echo "  npm run list          # List available tests"
 	@echo ""
 
-clean:
+uninstall:
 ifndef TARGET
-	$(error TARGET is required. Usage: make clean TARGET=/path/to/project)
+	$(error TARGET is required. Usage: make uninstall TARGET=/path/to/project)
 endif
 	@echo "Removing test framework from: $(TARGET)"
 	@rm -rf "$(TARGET)/cicd"

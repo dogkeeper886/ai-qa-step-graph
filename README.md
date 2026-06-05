@@ -182,7 +182,7 @@ Additional Makefile commands:
 
 ```bash
 make help                                    # Show usage
-make clean TARGET=/path/to/project           # Remove framework from project
+make uninstall TARGET=/path/to/project       # Remove framework from project
 ```
 
 ## Configuration
