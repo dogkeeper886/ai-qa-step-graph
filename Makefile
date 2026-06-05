@@ -9,7 +9,7 @@
 #   npm test          # assert-first; deterministic
 
 SHELL := /bin/bash
-.PHONY: install help uninstall check up down clean status query protect-main
+.PHONY: install help uninstall check up down clean status query ci
 
 COMPOSE := docker compose
 
@@ -45,6 +45,7 @@ help:
 	@echo "  make clean     # Stop and wipe to a fresh empty state (drops the volume)"
 	@echo "  make status    # Show whether the stack is up and healthy"
 	@echo "  make query Q=\"...\"  # Quick semantic lookup against the store"
+	@echo "  make ci        # Run the full check on demand (suite + drift) — the manual merge gate"
 
 # ─── Stack lifecycle (STORY-003) ────────────────────────────────────────────
 # Operate the local step-store stack: Postgres + pgvector + the MCP server.
@@ -71,10 +72,13 @@ Q ?= log in
 query:
 	@npm --prefix step-store run --silent query -- "$(Q)"
 
-# Gate merges on the deterministic checks (STORY-002 #38). Run once the
-# `tests` + `qa-drift` checks have gone green on a PR. Needs repo admin + gh.
-protect-main:
-	@./cicd/scripts/protect-main.sh
+# The manual merge gate (STORY-002 #42). CI never auto-runs here, so run the
+# checks on demand before merging: stand the stack up, run the assert-first
+# suite, then the file-only drift/binding gate. Green here + human review is
+# the gate — there are no required status checks.
+ci: up
+	npm --prefix cicd/tests test
+	npm --prefix step-store run --silent drift
 
 check:
 ifndef TARGET
