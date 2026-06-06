@@ -60,6 +60,30 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Dev-workflow discipline
+
+Substantial work flows through a pipeline; each step is a gate that stops for a
+human decision (commands suggest the next, they never auto-run it):
+
+```
+dw-story → dw-tasks → dw-review-tasks → dw-implement
+        → dw-review-implement → dw-create-pr → dw-merge
+```
+
+Two review gates are external skills this repo does not own — invoke them by hand:
+- `code-review` (bundled): adversarial diff review. Run after `dw-implement`,
+  alongside `dw-review-implement`. Earns its cost on logic/risk; skip for pure docs.
+- `/review` (builtin): PR overview. Run after `dw-create-pr`, before `dw-merge`.
+
+Don't wire these into the `dw-*` commands — they may not exist in every install,
+and a command that references a missing skill is a dangling pointer.
+
+**Right-size it.** A typo or a one-line doc change does not need the full chain —
+use judgment, branch + PR + merge is enough. The three review passes overlap:
+`dw-review-implement` is the always-on substance gate, `code-review` is for real
+logic or risk, `/review` is the PR summary. Running all three on a trivial diff is
+ritual, not rigor.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
