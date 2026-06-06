@@ -22,7 +22,8 @@ export const DEFAULT_MAX_DISTANCE = 0.35;
  */
 export const DEFAULT_RESOLUTION_DISTANCE = 0.15;
 
-/** Fixed key for the advisory lock that serializes add_step's resolve+insert (#48). */
+/** Fixed key for the advisory lock that serializes add_step's resolve+insert
+ *  (#48). Arbitrary, but must stay unique among advisory locks in this DB. */
 const ADD_STEP_LOCK = 770845;
 
 export interface StepHit {
@@ -88,7 +89,9 @@ export interface AddResult {
  * the lock, so only the two fast queries serialize. A global lock (over a
  * per-embedding bucket) is deliberate: bucketing near-identical vectors has an
  * LSH boundary problem — neighbours can fall in different buckets and still
- * race — and the locked section is tiny.
+ * race — and the locked section is tiny. The lock serializes add-vs-add only;
+ * regen/load-tests rebuild in their own transactions and assume no concurrent
+ * live adds.
  */
 export async function addStep(
   text: string,
@@ -129,7 +132,13 @@ export async function addStep(
     await client.query('COMMIT');
     return { id: Number(rows[0].id), resolved: false };
   } catch (err) {
-    await client.query('ROLLBACK');
+    // The connection may be dead (the original error); don't let a failing
+    // ROLLBACK mask the real cause.
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      /* keep the original error */
+    }
     throw err;
   } finally {
     client.release();

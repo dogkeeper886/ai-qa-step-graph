@@ -74,12 +74,19 @@ check('search miss (unrelated)', miss.match === false, `message="${miss.message}
 const RACE = 'race-test';
 await pool.query('DELETE FROM step WHERE src = $1', [RACE]);
 const racePhrase = 'provision the staging database cluster (smoke race probe)';
-await Promise.all(
+const results = await Promise.all(
   Array.from({ length: 8 }, () =>
     client.callTool({ name: 'add_step', arguments: { text: racePhrase, src: RACE } })),
 );
-const { rows: rc } = await pool.query('SELECT count(*)::int AS n FROM step WHERE src = $1', [RACE]);
-check('concurrent adds → one node', rc[0].n === 1, `${rc[0].n} node(s) from 8 concurrent adds`);
+// All eight must land on one node id — whether they inserted it or resolved to
+// an existing one. (Convergence is robust; a src row-count would false-fail if
+// the probe ever resolved to a pre-existing node instead of inserting.)
+const ids = results.map((r) => parse(r).id);
+check(
+  'concurrent adds → one node',
+  ids.every((id) => id === ids[0]),
+  `${new Set(ids).size} distinct id(s) from 8 concurrent adds`,
+);
 await pool.query('DELETE FROM step WHERE src = $1', [RACE]);
 
 await client.close();
