@@ -22,6 +22,9 @@ export const DEFAULT_MAX_DISTANCE = 0.35;
  */
 export const DEFAULT_RESOLUTION_DISTANCE = 0.15;
 
+/** Fixed key for the advisory lock that serializes add_step's resolve+insert (#48). */
+const ADD_STEP_LOCK = 770845;
+
 export interface StepHit {
   id: number;
   text: string;
@@ -76,11 +79,16 @@ export interface AddResult {
  * Merge on resolve: keep the first-seen text and provenance (the canonical
  * node), raise its confidence to the higher of the two. Richer accumulation
  * (a reinforcement count, appended provenance) would need a schema column and
- * is left out of this core.
+ * is left out of this core (#52).
  *
- * NOTE: search-before-insert races under concurrent adds of the *same* meaning
- * (both miss, both insert) — pgvector has no "unique-if-near" index. Handled
- * separately in #48.
+ * Concurrency (#48): pgvector has no "unique-if-near" index, so a bare
+ * search-then-insert races — two concurrent adds of the same meaning both miss
+ * and both insert. The resolve+insert runs in a transaction holding a single
+ * advisory lock, making that section atomic; the embedding is computed before
+ * the lock, so only the two fast queries serialize. A global lock (over a
+ * per-embedding bucket) is deliberate: bucketing near-identical vectors has an
+ * LSH boundary problem — neighbours can fall in different buckets and still
+ * race — and the locked section is tiny.
  */
 export async function addStep(
   text: string,
@@ -89,29 +97,41 @@ export async function addStep(
   provenance: unknown = null,
   namespace: string | null = null,
 ): Promise<AddResult> {
-  const v = toVectorLiteral(await embed(text));
-  // Resolve: is this the same step as one already stored *in the same namespace*?
-  // Scoped like searchStep — a live add (namespace NULL) resolves against
-  // canonical/other live steps, never against a namespaced test-doc row (which
-  // load-tests rebuilds, and would otherwise swallow the add).
-  const { rows: near } = await pool.query(
-    `SELECT id FROM step
-      WHERE (embedding <=> $1::vector) <= $2
-        AND namespace IS NOT DISTINCT FROM $3
-      ORDER BY embedding <=> $1::vector
-      LIMIT 1`,
-    [v, DEFAULT_RESOLUTION_DISTANCE, namespace],
-  );
-  if (near.length) {
-    const id = Number(near[0].id);
-    await pool.query(`UPDATE step SET conf = GREATEST(conf, $2) WHERE id = $1`, [id, conf]);
-    return { id, resolved: true };
+  const v = toVectorLiteral(await embed(text)); // outside the lock — the slow part
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock($1)', [ADD_STEP_LOCK]);
+    // Resolve: is this the same step as one already stored *in the same namespace*?
+    // Scoped like searchStep — a live add (namespace NULL) resolves against
+    // canonical/other live steps, never against a namespaced test-doc row (which
+    // load-tests rebuilds, and would otherwise swallow the add).
+    const { rows: near } = await client.query(
+      `SELECT id FROM step
+        WHERE (embedding <=> $1::vector) <= $2
+          AND namespace IS NOT DISTINCT FROM $3
+        ORDER BY embedding <=> $1::vector
+        LIMIT 1`,
+      [v, DEFAULT_RESOLUTION_DISTANCE, namespace],
+    );
+    if (near.length) {
+      const id = Number(near[0].id);
+      await client.query(`UPDATE step SET conf = GREATEST(conf, $2) WHERE id = $1`, [id, conf]);
+      await client.query('COMMIT');
+      return { id, resolved: true };
+    }
+    const { rows } = await client.query(
+      `INSERT INTO step (text, embedding, conf, src, namespace, provenance)
+       VALUES ($1, $2::vector, $3, $4, $5, $6::jsonb)
+       RETURNING id`,
+      [text, v, conf, src, namespace, provenance === null ? null : JSON.stringify(provenance)],
+    );
+    await client.query('COMMIT');
+    return { id: Number(rows[0].id), resolved: false };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
-  const { rows } = await pool.query(
-    `INSERT INTO step (text, embedding, conf, src, namespace, provenance)
-     VALUES ($1, $2::vector, $3, $4, $5, $6::jsonb)
-     RETURNING id`,
-    [text, v, conf, src, namespace, provenance === null ? null : JSON.stringify(provenance)],
-  );
-  return { id: Number(rows[0].id), resolved: false };
 }
