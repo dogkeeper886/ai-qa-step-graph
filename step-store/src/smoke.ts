@@ -69,6 +69,26 @@ const miss = parse(await client.callTool({
 }));
 check('search miss (unrelated)', miss.match === false, `message="${miss.message}"`);
 
+// Concurrency (#48): firing the same brand-new step many times at once must
+// still leave exactly one node — the advisory lock serializes resolve+insert.
+const RACE = 'race-test';
+await pool.query('DELETE FROM step WHERE src = $1', [RACE]);
+const racePhrase = 'provision the staging database cluster (smoke race probe)';
+const results = await Promise.all(
+  Array.from({ length: 8 }, () =>
+    client.callTool({ name: 'add_step', arguments: { text: racePhrase, src: RACE } })),
+);
+// All eight must land on one node id — whether they inserted it or resolved to
+// an existing one. (Convergence is robust; a src row-count would false-fail if
+// the probe ever resolved to a pre-existing node instead of inserting.)
+const ids = results.map((r) => parse(r).id);
+check(
+  'concurrent adds → one node',
+  ids.every((id) => id === ids[0]),
+  `${new Set(ids).size} distinct id(s) from 8 concurrent adds`,
+);
+await pool.query('DELETE FROM step WHERE src = $1', [RACE]);
+
 await client.close();
 await pool.query('DELETE FROM step WHERE src = $1', [SRC]);
 await pool.end();
