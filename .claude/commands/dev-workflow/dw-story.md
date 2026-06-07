@@ -72,7 +72,7 @@ proof of concept, or clarification. The "how" goes here, not above.]
 Show the user the created story and suggest next steps:
 - `/dw-review-story STORY-XXX` to check it's complete and still a goal, not a spec
 - `/dw-tasks STORY-XXX` to open GitHub issue(s) where the *how* gets worked out
-- `/tw-plan-init` to create a test plan (if QA-related)
+- `/qw-plan` to plan what to test (if QA-related)
 
 ---
 

@@ -68,7 +68,7 @@ units exist now; don't hardcode an inventory that will drift.
 
 1. **List the producers.** A producer is any unit that *creates, syncs, publishes, or
    drafts a deliverable* — by name (`create-`, `sync-`, `publish-`, `draft-`, `init-`)
-   or by what it does (a producing gerund skill like `planning-tests`, `creating-demo`).
+   or by what it does (a producing gerund skill — a name like `planning-…`, `drafting-…`).
 2. **List the reviews.** Any unit whose job is to *check a result* — `*-review`,
    `*-verify`, the `reviewing-*` skills, a typography/format audit.
 3. **Match each producer to the review that covers its output.** A pairing is real only
