@@ -84,6 +84,23 @@ use judgment, branch + PR + merge is enough. The three review passes overlap:
 logic or risk, `/review` is the PR summary. Running all three on a trivial diff is
 ritual, not rigor.
 
+## 6. Artifact & doc review discipline
+
+Match the reviewer to **who reads** the file you changed:
+
+- **Human-read docs** (README, `docs/` prose): run `reviewing-phrasing` (the words)
+  + `reviewing-typography` (the look) — the human-read doc review.
+- **Agent-read tooling** (commands, skills, CLAUDE.md, rules): run
+  `reviewing-artifacts` (does it do its job — one job, complete, goal-not-spec,
+  fits the studio, right for its reader).
+
+These are skills this repo owns. Like the dev-workflow gates, they stop for a human
+and never auto-run — invoke them by hand.
+
+**Right-size it.** A typo or a one-line tweak does not need a review pass — use
+judgment. Reach for these when a change is substantial enough that the look, the
+wording, or the artifact's fitness actually matters.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
