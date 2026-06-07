@@ -4,12 +4,15 @@
 # run the on-demand checks. Run `make help` for the targets.
 
 SHELL := /bin/bash
-.PHONY: help up down clean status query ci
+.PHONY: help install up down clean status query ci
 
 COMPOSE := docker compose
 
 help:
 	@echo "ai-qa-step-graph — the step-store MCP server"
+	@echo ""
+	@echo "Setup:"
+	@echo "  make install   # Install npm deps (step-store + cicd/tests) for a fresh clone"
 	@echo ""
 	@echo "Stack lifecycle:"
 	@echo "  make up        # Start Postgres+pgvector and the MCP server"
@@ -18,6 +21,16 @@ help:
 	@echo "  make status    # Show whether the stack is up and healthy"
 	@echo "  make query Q=\"...\"  # Quick semantic lookup against the store"
 	@echo "  make ci        # Run the full check on demand (suite + drift) — the manual merge gate"
+
+# ─── Setup (STORY-003) ──────────────────────────────────────────────────────
+# Get a fresh clone ready: install the npm deps the source/test targets need.
+# (`make up` builds the Docker image and needs no local deps; `make query`,
+# `make ci`, smoke, and the tests do — run this once after cloning.)
+
+install:
+	npm --prefix step-store install
+	npm --prefix cicd/tests install
+	@echo "Deps installed. Run 'make up' to start the stack."
 
 # ─── Stack lifecycle (STORY-003) ────────────────────────────────────────────
 # Operate the local step-store stack: Postgres + pgvector + the MCP server.
