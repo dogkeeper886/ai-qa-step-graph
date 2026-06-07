@@ -86,11 +86,6 @@ ifndef TARGET
 endif
 
 install: check
-	@echo "NOTE: Consider using agent-driven installation instead."
-	@echo "  In your project, tell Claude Code:"
-	@echo "    /install $(TEMPLATE_DIR)"
-	@echo "  See README.md for details."
-	@echo ""
 	@echo "Installing test framework to: $(TARGET)"
 	@echo "Project name: $(NAME)"
 	@echo ""
