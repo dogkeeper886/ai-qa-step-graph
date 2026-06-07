@@ -28,7 +28,7 @@ Fits in the qa-workflow:
         │     - STALE   — the linked story's sha256 no longer matches the doc's
         │                 `story_hash` (the story moved since the test was synced).
         │     - UNBOUND — the doc and its bound executable diverged (reuses the
-        │                 #25 binding audit).
+        │                 binding audit).
         │   Exits non-zero if anything is stale or unbound (so CI fails on drift).
         │
         └─► On a finding:

@@ -4,7 +4,8 @@
 Check the proposed scenarios cover the story — and stay coverage, not a frozen
 step-by-step spec.
 
-Target: the scenario list from /qw-plan for a STORY-XXX.
+Target: the scenario list from /qw-plan for a STORY-XXX — as proposed in the
+conversation, or as already realized in docs/tests/ when reviewing after the fact.
 
 ## PURPOSE
 
