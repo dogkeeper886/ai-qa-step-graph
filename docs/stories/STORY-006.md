@@ -59,3 +59,4 @@ listed here is the mechanical work and the few edges still to settle.)*
 
 - Created: 2026-06-07
 - Issues: #56 (reconcile cross-refs), #57 (remove unused tooling), #58 (typography/phrasing study)
+- PR: #59 (open) — all three issues
