@@ -10,6 +10,7 @@ vectors; an MCP server (`search_step` / `add_step`) is how the agent reaches the
 ## Quick start
 
 ```bash
+make install            # install npm deps (step-store + cicd/tests) — once per clone
 make up                 # start Postgres + pgvector + the MCP server (HTTP :3000)
 make query Q="log in"   # quick semantic lookup
 make down               # stop the stack
@@ -18,10 +19,11 @@ make down               # stop the stack
 The first `make up` builds the MCP image and bakes in the embedding model, so it
 takes a minute; later runs are fast.
 
-## Stack commands
+## Make commands
 
 | Command | What it does |
 |---------|--------------|
+| `make install` | Install npm deps for `step-store` + `cicd/tests` (run once after cloning) |
 | `make up` | Start the stack (Postgres + pgvector + MCP), apply the schema idempotently, wait until healthy |
 | `make down` | Stop the stack |
 | `make clean` | Stop and wipe to a fresh empty state (drops the volume) |
@@ -274,29 +276,23 @@ npm run review              # On a failed run: AI log triage (advisory, optional
 
 ### MCP testing
 
-The runner can drive an MCP server under test — `mcp-client.ts` spawns the server and calls tools:
+This repo's MCP channel is exercised end-to-end by the **smoke test** — it spawns the
+server over stdio (the way an agent reaches it), adds a step, finds it by a paraphrase,
+and confirms an unrelated phrase misses. It's the integration case (`TC-INTEGRATION-001`):
 
 ```bash
-# Configure your server command
-export MCP_SERVER_COMMAND="node dist/mcpServer.js"
-
-# Test a tool directly
-npx tsx cicd/tests/src/mcp-client.ts get_venues '{}'
-
-# Use in YAML test cases
+make up                              # the smoke test needs the stack
+npm --prefix step-store run smoke    # add → paraphrase hit → unrelated miss
 ```
 
-```yaml
-steps:
-  - name: Query venues
-    command: npx tsx cicd/tests/src/mcp-client.ts get_venues '{}'
-    expectPatterns:
-      - "totalCount"
-    rejectPatterns:
-      - "isError"
-```
+The runner also ships a generic `mcp-client.ts` for ad-hoc tool calls against any MCP
+server. It needs the MCP SDK, which is an **optional** peer of `cicd/tests` (install it
+there first: `npm --prefix cicd/tests install @modelcontextprotocol/sdk`), then:
 
-Uses `@modelcontextprotocol/sdk` (already a dependency of `cicd/tests`).
+```bash
+export MCP_SERVER_COMMAND="npm --prefix step-store run server"
+npx tsx cicd/tests/src/mcp-client.ts search_step '{"phrase":"log in"}'
+```
 
 ### Claude workflows
 
