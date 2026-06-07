@@ -76,16 +76,19 @@ function buildServer(): McpServer {
           .optional()
           .describe(
             'file the step under one repo/tenant (default: the global namespace). ' +
-              'A namespaced step resolves only against its own namespace; pair it with a ' +
-              'distinct `src` to survive `regen` (which owns only the canonical slice).',
+              'A namespaced step resolves only against its own namespace and is never ' +
+              'wiped by `regen` (which rebuilds only the un-namespaced canonical space). ' +
+              'If `src` is omitted it defaults to the namespace.',
           ),
       },
     },
     async ({ text, conf, src, provenance, namespace }) => {
+      // A namespaced step is owned by its slice: default its src to the namespace
+      // so it carries a real lifecycle label (never null) for slice-replace.
       const { id, resolved } = await addStep(
         text,
         conf ?? 1.0,
-        src ?? null,
+        src ?? namespace ?? null,
         provenance ?? null,
         namespace ?? null,
       );

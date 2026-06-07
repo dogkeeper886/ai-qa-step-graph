@@ -131,28 +131,32 @@ check(
 );
 await pool.query('DELETE FROM step WHERE src = $1', [RACE]);
 
-// regen ownership (#67): a rebuild tears down only the canonical slice and
-// leaves every other derived slice intact. A step contributed under its own src
-// must survive `regen` — before this change, regen wiped everything but
-// 'test-doc'. Add a probe with a distinct src, rebuild, confirm it is still there.
-const PROBE = 'regen-probe';
-await pool.query('DELETE FROM step WHERE src = $1', [PROBE]);
-await client.callTool({
+// regen ownership (#67): a rebuild touches only the un-namespaced canonical
+// space; a namespaced step is durable across it — src or no src. Add a probe
+// under a namespace with NO src, confirm src defaults to the namespace, rebuild,
+// and confirm it survives. (Before this change, regen wiped everything but 'test-doc'.)
+const PROBE_NS = 'regen-probe-ns';
+await pool.query('DELETE FROM step WHERE namespace = $1', [PROBE_NS]);
+const probe = parse(await client.callTool({
   name: 'add_step',
-  arguments: { text: 'rotate the signing key (regen probe)', src: PROBE, namespace: 'regen-probe-ns' },
-});
+  // no src on purpose — a namespaced step must be durable without one.
+  arguments: { text: 'rotate the signing key (regen probe)', namespace: PROBE_NS },
+}));
+const { rows: labelled } = await pool.query('SELECT src FROM step WHERE id = $1', [probe.id]);
+check('add_step defaults src to the namespace', labelled[0]?.src === PROBE_NS, `src=${labelled[0]?.src}`);
+
 const regen = spawnSync('npx', ['tsx', 'src/regen.ts'], {
   cwd: PKG_ROOT,
   encoding: 'utf8',
   env: { ...process.env },
 });
-const { rows: survived } = await pool.query('SELECT id FROM step WHERE src = $1', [PROBE]);
+const { rows: survived } = await pool.query('SELECT id FROM step WHERE namespace = $1', [PROBE_NS]);
 check(
-  'regen preserves a contributed slice',
-  regen.status === 0 && survived.length === 1,
-  `regen exit=${regen.status} probe rows after rebuild=${survived.length}`,
+  'regen preserves a namespaced step (no src needed)',
+  regen.status === 0 && survived.some((r: { id: string }) => Number(r.id) === probe.id),
+  `regen exit=${regen.status} rows after rebuild=${survived.length}`,
 );
-await pool.query('DELETE FROM step WHERE src = $1', [PROBE]);
+await pool.query('DELETE FROM step WHERE namespace = $1', [PROBE_NS]);
 
 await client.close();
 await pool.query('DELETE FROM step WHERE src = $1', [SRC]);
