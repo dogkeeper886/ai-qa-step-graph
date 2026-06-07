@@ -99,38 +99,20 @@ Or the HTTP (Docker) server, after `make up`:
 
 CI reuses the **same** lifecycle targets — there is no separate code path. The `tests`
 workflow stands the stack up with `make up` (which fails fast via `--wait` if it can't
-become healthy), runs the assert-first suite, and tears down with `make down`. The
-workflows are **manual** (`workflow_dispatch`); `make ci` is the on-demand merge gate.
+become healthy), runs the assert-first suite, and tears down with `make down`. A second
+workflow (`qa-drift.yml`) runs the file-only story↔test drift + binding gate. The
+workflows are **manual** (`workflow_dispatch`); there are no required status checks — a
+green `make ci` plus human review is the gate.
 
 ---
 
-The rest of this document covers the **bundled assert-first test framework** —
-the testing tooling this repo ships and uses.
-
-A YAML-driven test runner whose verdict is **deterministic asserts** — exit codes plus
-expected/rejected patterns. An LLM is used **only on failure**, as advisory log triage
-(`npm run review`), and never decides pass/fail.
-
 ## Bundled test framework
 
-### Why This Framework?
+A YAML-driven test runner this repo ships and uses to guard the step-store. Its verdict is
+**deterministic asserts** — exit codes plus expected/rejected patterns; an LLM is used
+**only on failure**, as advisory log triage (`npm run review`), and never decides pass/fail.
 
-Tests assert deterministically — exit codes, expected/rejected patterns, error detection — so the gate is fast and reproducible with no LLM in the loop. When a test *fails*, an optional on-demand log review (Anthropic SDK) suggests likely causes; it's advisory triage, never the verdict.
-
-- **Deterministic verdict**: exit codes, expected patterns, rejected patterns, fatal-error detection
-- **On-fail triage (optional)**: an LLM reads a failed test's log and surfaces likely causes — advisory, run on demand
-
-### Design Philosophy
-
-The framework is built around three core principles:
-
-1. **Configuration, not code**: the YAML-driven approach means tests are configuration—making them accessible to developers and non-developers alike.
-
-2. **Comprehensive Logging**: Every test execution produces detailed, timestamped logs with test markers for precise extraction. This enables effective debugging, auditing, and tracking of test history.
-
-3. **Proper Test Design**: Tests are organized by suite (build, integration, e2e), support dependencies between test cases, and provide clear pass/fail criteria that both humans and LLMs can evaluate.
-
-### Key Technologies
+### Key technologies
 
 | Technology | Purpose |
 |------------|---------|
@@ -140,10 +122,8 @@ The framework is built around three core principles:
 | **Docker Compose** | Log collection with marker-based extraction |
 | **GitHub Actions** | CI/CD pipeline orchestration |
 
-### Notable Features
+### Notable features
 
-- **Assert-first verdict**: deterministic exit-code + pattern checks decide pass/fail; no LLM in the gate
-- **On-fail AI log-reviewer**: `npm run review` triages failed runs (advisory, off by default)
 - **YAML-Driven Tests**: Tests defined as configuration, not code
 - **Tag-Based Filtering**: Filter tests by feature tag via `--tag`
 - **Variable Capture**: Extract values from step output and pass to later steps via `{{variable}}`
@@ -155,9 +135,7 @@ The framework is built around three core principles:
 - **Manual CI gate**: `make ci` (stack up + suite + drift) runs on demand; workflows are manual-trigger
 - **Flexible Output**: Console (colored) and JSON formats for CI consumption
 
-## Architecture
-
-### Workflow Diagram
+### Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -240,7 +218,7 @@ The verdict is deterministic, so the gate is fast, reproducible, and needs no mo
 
 When a meaning-based check can't be reduced to a pattern, encode it as a numeric assert instead (e.g. this repo asserts semantic search by *cosine distance < threshold*). The one place an LLM helps is **after a failure**: `npm run review` reads the failed test's log and suggests likely causes — advisory triage, never the verdict.
 
-## Configuration
+### Configuration
 
 The runner is configured in `cicd/tests/src/config.ts`:
 
@@ -267,7 +245,7 @@ export const ERROR_PATTERNS: RegExp[] = [
 ];
 ```
 
-### Environment Variables
+#### Environment variables
 
 The on-fail log-reviewer (`npm run review`) is configured by environment, not source:
 
@@ -278,7 +256,7 @@ The on-fail log-reviewer (`npm run review`) is configured by environment, not so
 | `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` | credential — with none set, the reviewer skips cleanly | — |
 | `ANTHROPIC_BASE_URL` | point at a local Anthropic-compatible endpoint, e.g. Ollama `http://localhost:11434` | Anthropic API |
 
-## Running Tests
+### Running tests
 
 ```bash
 cd cicd/tests
@@ -294,17 +272,7 @@ npm run list -- --tag auth  # List tests by tag
 npm run review              # On a failed run: AI log triage (advisory, optional)
 ```
 
-## CI
-
-CI runs **on demand** — no workflow auto-runs in this repo:
-
-- `.github/workflows/tests.yml` — stands up Postgres+pgvector and runs the suite (manual / `workflow_dispatch`).
-- `.github/workflows/qa-drift.yml` — file-only story↔test drift + binding gate (manual).
-- `make ci` — the local merge gate: stack up → suite → drift, on demand.
-
-There are no required status checks; a green `make ci` plus human review is the gate.
-
-## MCP Testing
+### MCP testing
 
 The runner can drive an MCP server under test — `mcp-client.ts` spawns the server and calls tools:
 
@@ -330,7 +298,7 @@ steps:
 
 Uses `@modelcontextprotocol/sdk` (already a dependency of `cicd/tests`).
 
-## Claude workflows
+### Claude workflows
 
 AI-assisted workflows via Claude Code slash commands:
 
@@ -342,7 +310,7 @@ AI-assisted workflows via Claude Code slash commands:
 
 These live in `.claude/commands/` and `.claude/skills/`.
 
-## Writing Test Cases
+### Writing test cases
 
 Create YAML files in `cicd/tests/testcases/<suite>/`:
 
@@ -371,7 +339,7 @@ criteria: |
   Verify the project builds without errors.
 ```
 
-### Tags
+#### Tags
 
 Tags enable filtering a run to a subset of cases:
 
@@ -381,7 +349,7 @@ tags: [build, compile]     # Suite-aligned tags
 tags: [smoke]              # Test category tags
 ```
 
-### Variable Capture
+#### Variable capture
 
 Steps can capture values from JSON output and pass them to later steps using `{{variable}}` substitution. Variables resolve from captured step output first, then fall back to `process.env`:
 
@@ -423,7 +391,7 @@ criteria: |
 
 MCP tool responses (double-encoded JSON in `content[0].text`) are automatically unwrapped before capture.
 
-## Directory Structure
+### Directory structure
 
 ```
 ai-qa-step-graph/
