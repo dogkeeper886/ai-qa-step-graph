@@ -153,9 +153,9 @@ The framework is built around three core principles:
 - **Dependency Resolution**: Tests can depend on other tests passing first
 - **Log Collection with Markers**: Precise extraction of logs per test from Docker streams
 - **MCP Client**: Test MCP server tools with configurable server command
-- **Claude Skills**: AI-assisted test authoring via `/ci-testcase`, `/ci-run`, `/add-tool`
+- **Claude workflows**: AI-assisted dev + test authoring via the dev-workflow (`/dw-*`) and qa-workflow (`/qw-*`) command chains
 - **Manual CI gate**: `make ci` (stack up + suite + drift) runs on demand; workflows are manual-trigger
-- **Installable Template**: Add to any project via `/install` or `make install`
+- **Installable Template**: Add to any project via `make install`
 - **Flexible Output**: Console (colored) and JSON formats for CI consumption
 
 ## Architecture
@@ -245,21 +245,7 @@ When a meaning-based check can't be reduced to a pattern, encode it as a numeric
 
 ## Quick Start
 
-### Recommended: Agent-Driven Install
-
-In your project directory, tell Claude Code:
-
-> Install the test framework from /path/to/test-framework-template
-
-Or use the slash command:
-
-```
-/install /path/to/test-framework-template
-```
-
-The agent will detect your project type (MCP server, Docker, etc.), ask configuration questions, and install only what you need with values pre-configured.
-
-### Alternative: Manual Install
+Install with `make install`, then configure:
 
 ```bash
 cd /path/to/test-framework-template
@@ -366,19 +352,17 @@ steps:
 
 Requires `@modelcontextprotocol/sdk` (install in your project: `npm install @modelcontextprotocol/sdk`).
 
-## Claude Skills
+## Claude workflows
 
 AI-assisted workflows via Claude Code slash commands:
 
-| Skill | Purpose |
-|-------|---------|
-| `/ci-testcase` | Generate YAML test cases from requirements |
-| `/ci-run` | Execute tests with guided output |
-| `/add-tool` | Add new MCP tools following standard patterns |
-| `/install` | Install framework into a project |
-| `/review-docs-privacy` | Review for security and documentation quality |
+| Workflow | Purpose |
+|----------|---------|
+| `/dw-*` (dev-workflow) | Drive a story through tasks → implement → PR → merge |
+| `/qw-*` (qa-workflow) | Author and guard the test docs: plan → cases → bind → drift |
+| `reviewing-artifacts` | Review the tooling itself — commands, skills, and project docs |
 
-These are installed to `.claude/skills/` by the install flow.
+These live in `.claude/commands/` and `.claude/skills/`.
 
 ## Writing Test Cases
 
@@ -467,10 +451,10 @@ MCP tool responses (double-encoded JSON in `content[0].text`) are automatically 
 your-project/
 ├── CLAUDE.md                    # AI agent guidance
 ├── .claude/
-│   ├── skills/                  # AI-assisted workflows
-│   │   ├── ci-testcase/         # /ci-testcase — generate test cases
-│   │   ├── ci-run/              # /ci-run — execute tests
-│   │   └── add-tool/            # /add-tool — add MCP tools
+│   ├── commands/                # AI-assisted workflows
+│   │   ├── dev-workflow/        # /dw-* — story → tasks → implement → PR → merge
+│   │   └── qa-workflow/         # /qw-* — plan → cases → bind → drift
+│   ├── skills/                  # reviewing-artifacts (+ phrasing, typography)
 │   └── rules/                   # Context-aware rules
 │       ├── test-yaml-format.md  # YAML schema reference
 │       └── workflow-patterns.md # CI workflow design patterns
