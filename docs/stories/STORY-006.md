@@ -58,5 +58,9 @@ listed here is the mechanical work and the few edges still to settle.)*
 ## Status
 
 - Created: 2026-06-07
-- Issues: #56 (reconcile cross-refs), #57 (remove unused tooling), #58 (typography/phrasing study)
-- PR: #59 (open) — all three issues
+- Completed: 2026-06-07
+- Issues (all closed): #56 (reconcile cross-refs), #57 (remove unused tooling),
+  #58 (repurpose typography/phrasing), #60 (remove template machinery)
+- PRs (merged): #59 (#56/#57/#58), #61 (#60)
+- Follow-ups out of scope: a real deps/compile `make install` (STORY-003); the
+  README `MCP testing` example still uses a generic tool name (minor docs pass)
