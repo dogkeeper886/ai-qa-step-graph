@@ -111,9 +111,7 @@ A YAML-driven test runner whose verdict is **deterministic asserts** — exit co
 expected/rejected patterns. An LLM is used **only on failure**, as advisory log triage
 (`npm run review`), and never decides pass/fail.
 
-## Project Goal
-
-This test framework design template was extracted from production MCP server projects to provide a **reusable testing foundation** that can be adopted by any project.
+## Bundled test framework
 
 ### Why This Framework?
 
@@ -126,7 +124,7 @@ Tests assert deterministically — exit codes, expected/rejected patterns, error
 
 The framework is built around three core principles:
 
-1. **Reusability**: Install into any project with a single command. The YAML-driven approach means tests are configuration, not code—making them accessible to developers and non-developers alike.
+1. **Configuration, not code**: the YAML-driven approach means tests are configuration—making them accessible to developers and non-developers alike.
 
 2. **Comprehensive Logging**: Every test execution produces detailed, timestamped logs with test markers for precise extraction. This enables effective debugging, auditing, and tracking of test history.
 
@@ -155,7 +153,6 @@ The framework is built around three core principles:
 - **MCP Client**: Test MCP server tools with configurable server command
 - **Claude workflows**: AI-assisted dev + test authoring via the dev-workflow (`/dw-*`) and qa-workflow (`/qw-*`) command chains
 - **Manual CI gate**: `make ci` (stack up + suite + drift) runs on demand; workflows are manual-trigger
-- **Installable Template**: Add to any project via `make install`
 - **Flexible Output**: Console (colored) and JSON formats for CI consumption
 
 ## Architecture
@@ -243,35 +240,16 @@ The verdict is deterministic, so the gate is fast, reproducible, and needs no mo
 
 When a meaning-based check can't be reduced to a pattern, encode it as a numeric assert instead (e.g. this repo asserts semantic search by *cosine distance < threshold*). The one place an LLM helps is **after a failure**: `npm run review` reads the failed test's log and suggests likely causes — advisory triage, never the verdict.
 
-## Quick Start
-
-Install with `make install`, then configure:
-
-```bash
-cd /path/to/test-framework-template
-make install TARGET=/path/to/your/project NAME=your-project
-cd /path/to/your/project/cicd/tests
-npm install
-# Then edit config.ts manually
-```
-
-Additional Makefile commands:
-
-```bash
-make help                                    # Show usage
-make uninstall TARGET=/path/to/project       # Remove framework from project
-```
-
 ## Configuration
 
-Edit `cicd/tests/src/config.ts` in your project:
+The runner is configured in `cicd/tests/src/config.ts`:
 
 ```typescript
-// Extend with custom suite names for your project
+// Extend with custom suite names as needed
 export const SUITES: string[] = ['build', 'integration', 'e2e'];
 
 export const CONFIG = {
-  projectName: 'your-project',
+  projectName: 'ai-qa-step-graph',
   sessionPrefix: 'test-session',
   defaultTimeout: 60000,
   defaultStepTimeout: 30000,
@@ -303,7 +281,7 @@ The on-fail log-reviewer (`npm run review`) is configured by environment, not so
 ## Running Tests
 
 ```bash
-cd your-project/cicd/tests
+cd cicd/tests
 
 npm test                    # Run all tests (assert-first; deterministic)
 npm test -- --suite build   # Run a specific suite
@@ -328,7 +306,7 @@ There are no required status checks; a green `make ci` plus human review is the 
 
 ## MCP Testing
 
-For MCP server projects, `mcp-client.ts` spawns your server and calls tools:
+The runner can drive an MCP server under test — `mcp-client.ts` spawns the server and calls tools:
 
 ```bash
 # Configure your server command
@@ -350,7 +328,7 @@ steps:
       - "isError"
 ```
 
-Requires `@modelcontextprotocol/sdk` (install in your project: `npm install @modelcontextprotocol/sdk`).
+Uses `@modelcontextprotocol/sdk` (already a dependency of `cicd/tests`).
 
 ## Claude workflows
 
@@ -448,7 +426,7 @@ MCP tool responses (double-encoded JSON in `content[0].text`) are automatically 
 ## Directory Structure
 
 ```
-your-project/
+ai-qa-step-graph/
 ├── CLAUDE.md                    # AI agent guidance
 ├── .claude/
 │   ├── commands/                # AI-assisted workflows
@@ -458,20 +436,23 @@ your-project/
 │   └── rules/                   # Context-aware rules
 │       ├── test-yaml-format.md  # YAML schema reference
 │       └── workflow-patterns.md # CI workflow design patterns
+├── step-store/                  # the MCP server + pgvector store
+├── docs/                        # product stories + the test docs (TS-*)
 ├── cicd/
 │   ├── tests/
 │   │   ├── src/
-│   │   │   ├── config.ts        # ← Configure here
+│   │   │   ├── config.ts        # ← runner config
 │   │   │   ├── cli.ts
 │   │   │   ├── types.ts
 │   │   │   ├── loader.ts
 │   │   │   ├── executor.ts
-│   │   │   ├── mcp-client.ts    # MCP tool client (optional)
+│   │   │   ├── mcp-client.ts    # MCP tool client
 │   │   │   ├── log-collector.ts
-│   │   │   ├── judge/
+│   │   │   ├── verdict.ts       # deterministic pass/fail
+│   │   │   ├── review-log.ts    # on-fail LLM triage (advisory)
 │   │   │   └── reporter/
 │   │   ├── testcases/
-│   │   │   ├── build/           # ← Your tests
+│   │   │   ├── build/
 │   │   │   ├── integration/
 │   │   │   └── e2e/
 │   │   ├── package.json
