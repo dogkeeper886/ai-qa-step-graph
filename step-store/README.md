@@ -41,7 +41,7 @@ your own `namespace`, then `search_step(..., namespace: "<yours>")` returns only
 (the default all-namespace search still finds them). Embedding happens here, server-side,
 so a consumer needs only to call the tool — no model on its side.
 
-Durability is structural: `regen` rebuilds only the **un-namespaced** canonical space, so
+Durability is structural: `regen` rebuilds only the un-namespaced canonical space, so
 **any step filed under a namespace survives a rebuild** — you don't have to manage `src`
 for it (omit `src` and it defaults to the namespace). Only bare, un-namespaced adds are
 ephemeral scratch that `regen` sweeps.
