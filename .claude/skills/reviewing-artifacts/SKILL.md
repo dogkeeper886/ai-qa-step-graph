@@ -5,9 +5,9 @@ description: |
   tooling (READMEs, stories, CLAUDE.md, and the like) — against five goal questions:
   one clear job, complete, a goal not a frozen spec, fits the studio, right for its
   reader. Also runs a producer→review pairing coverage pass that flags any producer
-  shipped without a paired review. Not for the published deliverables the product
-  generates (test plans, cases, emails, demos) — those go to the typography + phrasing
-  review. Floor, not ceiling.
+  shipped without a paired review. It judges whether an artifact does its job; how a
+  human-read doc (the README, docs/ prose) looks and reads goes to the typography +
+  phrasing review. Floor, not ceiling.
 ---
 
 # reviewing-artifacts
@@ -22,9 +22,9 @@ isn't listed below, flag it anyway.
 **Scope.** Review whatever artifact you're handed, *by kind* — commands, skills,
 READMEs, stories, CLAUDE.md, and anything like them. Don't tie this skill to a fixed
 inventory of the current commands and skills; new ones appear and old ones change. The
-**published deliverables the product generates** for outside readers — test plans, test
-cases, review emails, demo files, and the like — are reviewed by the deliverable review,
-`reviewing-typography` (the look) + `reviewing-phrasing` (the words), **not here**.
+fine-grained **look and words** of a human-read doc — the README, the prose in `docs/` —
+go to `reviewing-typography` (the look) + `reviewing-phrasing` (the words); this skill
+judges whether the artifact does its job (Q5 still asks whether a doc serves its reader).
 
 ## The five questions
 
