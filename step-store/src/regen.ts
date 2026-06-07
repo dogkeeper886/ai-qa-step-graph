@@ -41,9 +41,16 @@ async function regen() {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    // Rebuild only the canonical slice. Test-doc rows are a separate derived
-    // index (load-tests.ts, src='test-doc') and own their own rows — don't wipe them.
-    await client.query(`DELETE FROM step WHERE src IS DISTINCT FROM 'test-doc'`);
+    // Own only the un-namespaced canonical/scratch space. regen rebuilds the
+    // canonical files (which insert namespace-null rows: src 'canonical', or
+    // legacy null-src), and a bare live add is ephemeral scratch (also
+    // namespace-null) — both are torn down here. A *namespaced* row belongs to
+    // someone else's slice (the test-doc index, or a consumer's #67) and is
+    // never touched: filing a step under a namespace makes it durable across a
+    // rebuild, src or no src.
+    await client.query(
+      `DELETE FROM step WHERE (src = 'canonical' OR src IS NULL) AND namespace IS NULL`,
+    );
     for (const s of steps) {
       const v = toVectorLiteral(await embed(s.text));
       await client.query(

@@ -71,10 +71,27 @@ function buildServer(): McpServer {
         conf: z.number().min(0).max(1).optional().describe('confidence (default 1.0)'),
         src: z.string().optional().describe('where the step came from'),
         provenance: z.record(z.string(), z.unknown()).optional().describe('free-form trace'),
+        namespace: z
+          .string()
+          .optional()
+          .describe(
+            'file the step under one repo/tenant (default: the global namespace). ' +
+              'A namespaced step resolves only against its own namespace and is never ' +
+              'wiped by `regen` (which rebuilds only the un-namespaced canonical space). ' +
+              'If `src` is omitted it defaults to the namespace.',
+          ),
       },
     },
-    async ({ text, conf, src, provenance }) => {
-      const { id, resolved } = await addStep(text, conf ?? 1.0, src ?? null, provenance ?? null);
+    async ({ text, conf, src, provenance, namespace }) => {
+      // A namespaced step is owned by its slice: default its src to the namespace
+      // so it carries a real lifecycle label (never null) for slice-replace.
+      const { id, resolved } = await addStep(
+        text,
+        conf ?? 1.0,
+        src ?? namespace ?? null,
+        provenance ?? null,
+        namespace ?? null,
+      );
       // added=true → new node; resolved=true → reinforced an existing one.
       return {
         content: [

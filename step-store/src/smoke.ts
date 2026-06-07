@@ -7,6 +7,7 @@
  *
  * Run: npm run smoke   (needs the stack up: `docker compose up -d`)
  */
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -69,6 +70,47 @@ const miss = parse(await client.callTool({
 }));
 check('search miss (unrelated)', miss.match === false, `message="${miss.message}"`);
 
+// Namespace (#67): a step filed under a namespace is found by a search scoped to
+// that namespace and by the default all-namespace search, but not by a search
+// scoped to a different one — partitioning is a filter on top of meaning.
+const NS = 'smoke-ns';
+const nsPhrase = 'enable two-factor authentication for the account';
+const nsAdded = parse(await client.callTool({
+  name: 'add_step',
+  arguments: { text: nsPhrase, src: SRC, namespace: NS, provenance: { test: 'smoke' } },
+}));
+check('add_step under a namespace', typeof nsAdded.id === 'number', `id=${nsAdded.id} ns=${NS}`);
+
+const nsHit = parse(await client.callTool({
+  name: 'search_step',
+  arguments: { phrase: nsPhrase, namespace: NS },
+}));
+check(
+  'search scoped to the namespace finds it',
+  nsHit.match === true && nsHit.hits[0]?.id === nsAdded.id && nsHit.hits[0]?.namespace === NS,
+  `match=${nsHit.match} ns=${nsHit.hits?.[0]?.namespace}`,
+);
+
+const nsDefault = parse(await client.callTool({
+  name: 'search_step',
+  arguments: { phrase: nsPhrase },
+}));
+check(
+  'default search also surfaces the namespaced step',
+  nsDefault.match === true && nsDefault.hits.some((h: { id: number }) => h.id === nsAdded.id),
+  `hits=${nsDefault.hits?.length}`,
+);
+
+const nsOther = parse(await client.callTool({
+  name: 'search_step',
+  arguments: { phrase: nsPhrase, namespace: 'smoke-ns-other' },
+}));
+check(
+  'search scoped to a different namespace misses it',
+  !(nsOther.hits ?? []).some((h: { id: number }) => h.id === nsAdded.id),
+  `hits=${nsOther.hits?.length ?? 0}`,
+);
+
 // Concurrency (#48): firing the same brand-new step many times at once must
 // still leave exactly one node — the advisory lock serializes resolve+insert.
 const RACE = 'race-test';
@@ -88,6 +130,33 @@ check(
   `${new Set(ids).size} distinct id(s) from 8 concurrent adds`,
 );
 await pool.query('DELETE FROM step WHERE src = $1', [RACE]);
+
+// regen ownership (#67): a rebuild touches only the un-namespaced canonical
+// space; a namespaced step is durable across it — src or no src. Add a probe
+// under a namespace with NO src, confirm src defaults to the namespace, rebuild,
+// and confirm it survives. (Before this change, regen wiped everything but 'test-doc'.)
+const PROBE_NS = 'regen-probe-ns';
+await pool.query('DELETE FROM step WHERE namespace = $1', [PROBE_NS]);
+const probe = parse(await client.callTool({
+  name: 'add_step',
+  // no src on purpose — a namespaced step must be durable without one.
+  arguments: { text: 'rotate the signing key (regen probe)', namespace: PROBE_NS },
+}));
+const { rows: labelled } = await pool.query('SELECT src FROM step WHERE id = $1', [probe.id]);
+check('add_step defaults src to the namespace', labelled[0]?.src === PROBE_NS, `src=${labelled[0]?.src}`);
+
+const regen = spawnSync('npx', ['tsx', 'src/regen.ts'], {
+  cwd: PKG_ROOT,
+  encoding: 'utf8',
+  env: { ...process.env },
+});
+const { rows: survived } = await pool.query('SELECT id FROM step WHERE namespace = $1', [PROBE_NS]);
+check(
+  'regen preserves a namespaced step (no src needed)',
+  regen.status === 0 && survived.some((r: { id: string }) => Number(r.id) === probe.id),
+  `regen exit=${regen.status} rows after rebuild=${survived.length}`,
+);
+await pool.query('DELETE FROM step WHERE namespace = $1', [PROBE_NS]);
 
 await client.close();
 await pool.query('DELETE FROM step WHERE src = $1', [SRC]);
