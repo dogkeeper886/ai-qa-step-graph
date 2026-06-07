@@ -25,11 +25,26 @@ stack is up, the agent reaches the store every session with no per-run fiddling.
 
 ## Tools
 
-- **`search_step(phrase, k?, max_distance?)`** → nearest confirmed step(s) by cosine
-  distance, or a clear `{ "match": false }`. Cutoff defaults to `0.35` (calibrated:
-  paraphrases land < 0.30, different steps > 0.50).
-- **`add_step(text, conf?, src?, provenance?)`** → adds a confirmed step, findable by
-  meaning on the next search.
+- **`search_step(phrase, k?, max_distance?, namespace?)`** → nearest confirmed step(s)
+  by cosine distance, or a clear `{ "match": false }`. Cutoff defaults to `0.35`
+  (calibrated: paraphrases land < 0.30, different steps > 0.50). `namespace` scopes the
+  search to one repo/tenant; omit it to search across all.
+- **`add_step(text, conf?, src?, provenance?, namespace?)`** → adds a confirmed step,
+  findable by meaning on the next search. `namespace` files it under one repo/tenant (a
+  namespaced step resolves only against its own namespace); `src` records where it came
+  from.
+
+### Contributing steps from another repo
+
+`namespace` is how a second repo's steps stay distinct from this one's: file them under
+your own `namespace`, then `search_step(..., namespace: "<yours>")` returns only yours
+(the default all-namespace search still finds them). Embedding happens here, server-side,
+so a consumer needs only to call the tool — no model on its side.
+
+One durability rule: `regen` rebuilds the **canonical** slice (`src='canonical'` and
+legacy null-`src` rows) and leaves every other slice alone. So a contributed step must
+carry a `src` other than `'canonical'` to survive a rebuild — pass your own `src` (e.g.
+your repo name) alongside the `namespace`.
 
 ## Commands
 

@@ -71,10 +71,24 @@ function buildServer(): McpServer {
         conf: z.number().min(0).max(1).optional().describe('confidence (default 1.0)'),
         src: z.string().optional().describe('where the step came from'),
         provenance: z.record(z.string(), z.unknown()).optional().describe('free-form trace'),
+        namespace: z
+          .string()
+          .optional()
+          .describe(
+            'file the step under one repo/tenant (default: the global namespace). ' +
+              'A namespaced step resolves only against its own namespace; pair it with a ' +
+              'distinct `src` to survive `regen` (which owns only the canonical slice).',
+          ),
       },
     },
-    async ({ text, conf, src, provenance }) => {
-      const { id, resolved } = await addStep(text, conf ?? 1.0, src ?? null, provenance ?? null);
+    async ({ text, conf, src, provenance, namespace }) => {
+      const { id, resolved } = await addStep(
+        text,
+        conf ?? 1.0,
+        src ?? null,
+        provenance ?? null,
+        namespace ?? null,
+      );
       // added=true → new node; resolved=true → reinforced an existing one.
       return {
         content: [

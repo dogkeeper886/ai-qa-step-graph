@@ -1,6 +1,6 @@
 # Integration: the agent↔store channel over MCP (needs the stack up: `make up`).
 id: TC-INTEGRATION-001
-name: step-store channel — add, paraphrase hit, unrelated miss
+name: step-store channel — add, paraphrase hit, unrelated miss, namespace scoping, regen-safety
 suite: integration
 priority: 1
 timeout: 120000
@@ -18,4 +18,6 @@ steps:
 
 criteria: |
   add_step then search_step returns the paraphrase (distance under threshold),
-  and an unrelated phrase is a clean miss — proven deterministically by smoke.ts.
+  an unrelated phrase is a clean miss, a namespaced step is found only when search
+  is unscoped or scoped to its namespace, and a contributed slice survives regen —
+  all proven deterministically by smoke.ts.

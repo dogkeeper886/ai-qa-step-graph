@@ -28,7 +28,7 @@ findable by a paraphrase. Each case binds to the `cicd/` executable that runs it
 
 ### TC-02: The agent↔store channel works
 
-- **Objective:** add a step, find it by a paraphrase, miss an unrelated phrase.
+- **Objective:** add a step, find it by a paraphrase, miss an unrelated phrase, scope a step to its namespace, and keep a contributed slice across a regen.
 - **Script:** cicd/tests/testcases/integration/TC-INTEGRATION-001.yml
 - **Preconditions:** the stack is up (`make up`).
 

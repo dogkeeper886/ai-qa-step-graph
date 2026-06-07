@@ -41,9 +41,14 @@ async function regen() {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    // Rebuild only the canonical slice. Test-doc rows are a separate derived
-    // index (load-tests.ts, src='test-doc') and own their own rows — don't wipe them.
-    await client.query(`DELETE FROM step WHERE src IS DISTINCT FROM 'test-doc'`);
+    // Own only the canonical slice. regen produces canonical rows (src
+    // 'canonical', and legacy null-src rows from before src was tracked), so it
+    // tears down and rebuilds exactly those. Every other derived slice owns its
+    // own rows and is left intact — the test-doc index (load-tests.ts,
+    // src='test-doc') and any namespaced slice a consumer contributed under its
+    // own src (#67). A contributed step therefore needs a src other than
+    // 'canonical' to survive a rebuild.
+    await client.query(`DELETE FROM step WHERE src = 'canonical' OR src IS NULL`);
     for (const s of steps) {
       const v = toVectorLiteral(await embed(s.text));
       await client.query(
