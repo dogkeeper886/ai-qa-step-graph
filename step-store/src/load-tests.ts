@@ -14,25 +14,41 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { pool } from './db.js';
 import { embed, toVectorLiteral } from './embed.js';
-import { readScenario, scenarioFiles, stepText } from './testdoc.js';
+import { readScenario, scenarioFiles, stepText, caseText } from './testdoc.js';
 
 const TESTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs', 'tests');
 
-interface TestStep {
-  text: string; // "Action — Expected Result"
+interface TestRow {
+  text: string; // step: "Action — Expected Result"; case: "Title — Objective"
+  kind: 'step' | 'case';
   namespace: string;
   provenance: Record<string, unknown>;
 }
 
-/** Pull every step out of one scenario file, with parent-linkage provenance. */
-function docSteps(file: string, relPath: string): TestStep[] {
+/**
+ * Pull every indexable row out of one scenario file, with parent-linkage
+ * provenance. Two kinds (the parent-document pattern):
+ *   - one `case` row per TC — its title + objective, *what the case verifies*
+ *   - one `step` row per Steps-table row — its action + expected result
+ */
+function docRows(file: string, relPath: string): TestRow[] {
   const { frontMatter: fm, cases } = readScenario(file);
   const namespace = fm.namespace ?? 'default';
-  const out: TestStep[] = [];
+  const out: TestRow[] = [];
   for (const c of cases) {
+    out.push({
+      text: caseText(c),
+      kind: 'case',
+      namespace,
+      provenance: {
+        namespace, ts: fm.id, tc: c.tc, tc_title: c.title, objective: c.objective,
+        story: fm.story ?? null, script: c.script, doc: relPath,
+      },
+    });
     c.steps.forEach((s, i) => {
       out.push({
         text: stepText(s),
+        kind: 'step',
         namespace,
         provenance: {
           namespace, ts: fm.id, tc: c.tc, tc_title: c.title,
@@ -45,17 +61,17 @@ function docSteps(file: string, relPath: string): TestStep[] {
 }
 
 /** Read every docs/tests/*.md (except README), in stable order. */
-function loadAll(): TestStep[] {
-  const out: TestStep[] = [];
+function loadAll(): TestRow[] {
+  const out: TestRow[] = [];
   for (const f of scenarioFiles(TESTS_DIR)) {
-    out.push(...docSteps(join(TESTS_DIR, f), `docs/tests/${f}`));
+    out.push(...docRows(join(TESTS_DIR, f), `docs/tests/${f}`));
   }
   return out;
 }
 
 async function load() {
-  const steps = loadAll();
-  const namespaces = [...new Set(steps.map((s) => s.namespace))];
+  const rows = loadAll();
+  const namespaces = [...new Set(rows.map((s) => s.namespace))];
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -68,12 +84,12 @@ async function load() {
       `DELETE FROM step WHERE src = 'test-doc' AND namespace = ANY($1)`,
       [namespaces],
     );
-    for (const s of steps) {
+    for (const s of rows) {
       const v = toVectorLiteral(await embed(s.text));
       await client.query(
         `INSERT INTO step (text, embedding, conf, src, kind, namespace, provenance)
-         VALUES ($1, $2::vector, 1.0, 'test-doc', 'step', $3, $4::jsonb)`,
-        [s.text, v, s.namespace, JSON.stringify(s.provenance)],
+         VALUES ($1, $2::vector, 1.0, 'test-doc', $3, $4, $5::jsonb)`,
+        [s.text, v, s.kind, s.namespace, JSON.stringify(s.provenance)],
       );
     }
     await client.query('COMMIT');
@@ -83,8 +99,10 @@ async function load() {
   } finally {
     client.release();
   }
+  const caseCount = rows.filter((r) => r.kind === 'case').length;
   console.error(
-    `[load-tests] indexed ${steps.length} step(s) from ${namespaces.length} namespace(s): ${namespaces.join(', ')}`,
+    `[load-tests] indexed ${rows.length} row(s) (${caseCount} case(s) + ${rows.length - caseCount} step(s)) ` +
+      `from ${namespaces.length} namespace(s): ${namespaces.join(', ')}`,
   );
   await pool.end();
 }

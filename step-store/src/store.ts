@@ -38,7 +38,10 @@ export interface StepHit {
 /**
  * Return confirmed steps nearest `phrase` by meaning, closest first.
  * `namespace` scopes the search to one repo/tenant when given (a filter, not
- * isolation); omit it to search across all namespaces.
+ * isolation); omit it to search across all namespaces. Case-level rows
+ * (`kind='case'`, the objective index — #76) are excluded; they have their own
+ * search (search_cases, #77). `IS DISTINCT FROM` keeps canonical/live rows
+ * (kind NULL) in scope — only the case rows are filtered out.
  */
 export async function searchStep(
   phrase: string,
@@ -52,6 +55,7 @@ export async function searchStep(
        FROM step
       WHERE (embedding <=> $1::vector) <= $3
         AND ($4::text IS NULL OR namespace = $4)
+        AND kind IS DISTINCT FROM 'case'
       ORDER BY embedding <=> $1::vector
       LIMIT $2`,
     [v, k, maxDistance, namespace],

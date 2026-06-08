@@ -9,6 +9,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 export interface TestCase {
   tc: string;        // "TC-01"
   title: string;
+  objective: string | null; // the case's "what it verifies", or null if absent
   script: string | null; // the bound cicd YAML path, or null if unbound
   steps: { action: string; expected: string }[];
 }
@@ -74,6 +75,7 @@ export function parseScenario(md: string): Scenario {
     cases.push({
       tc: matches[i][1],
       title: matches[i][2].trim(),
+      objective: block.match(/\*\*Objective:\*\*\s*(.+)/)?.[1]?.trim() ?? null,
       script: block.match(/\*\*Script:\*\*\s*(\S+)/)?.[1] ?? null,
       steps,
     });
@@ -89,4 +91,13 @@ export function readScenario(file: string): Scenario {
 /** The searchable step text for one row: "Action — Expected" (or just Action). */
 export function stepText(s: { action: string; expected: string }): string {
   return s.expected && s.expected !== '—' ? `${s.action} — ${s.expected}` : s.action;
+}
+
+/**
+ * The searchable text for a case-level row: its title and objective — *what the
+ * case verifies*, the level an agent searches by. Falls back to the title alone
+ * when a case has no objective.
+ */
+export function caseText(c: { title: string; objective: string | null }): string {
+  return c.objective ? `${c.title} — ${c.objective}` : c.title;
 }
