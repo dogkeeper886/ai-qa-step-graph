@@ -13,7 +13,8 @@
     "port-yaml": "tsx src/port-yaml.ts",
     "drift": "tsx src/drift.ts",
     "query": "tsx src/query.ts",
-    "smoke": "tsx src/smoke.ts"
+    "smoke": "tsx src/smoke.ts",
+    "smoke:http": "tsx src/smoke-http.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
