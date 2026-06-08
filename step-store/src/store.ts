@@ -38,7 +38,10 @@ export interface StepHit {
 /**
  * Return confirmed steps nearest `phrase` by meaning, closest first.
  * `namespace` scopes the search to one repo/tenant when given (a filter, not
- * isolation); omit it to search across all namespaces.
+ * isolation); omit it to search across all namespaces. Case-level rows
+ * (`kind='case'`, the objective index — #76) are excluded; they have their own
+ * search (search_cases, #77). `IS DISTINCT FROM` keeps canonical/live rows
+ * (kind NULL) in scope — only the case rows are filtered out.
  */
 export async function searchStep(
   phrase: string,
@@ -52,6 +55,7 @@ export async function searchStep(
        FROM step
       WHERE (embedding <=> $1::vector) <= $3
         AND ($4::text IS NULL OR namespace = $4)
+        AND kind IS DISTINCT FROM 'case'
       ORDER BY embedding <=> $1::vector
       LIMIT $2`,
     [v, k, maxDistance, namespace],
@@ -108,11 +112,13 @@ export async function addStep(
     // Resolve: is this the same step as one already stored *in the same namespace*?
     // Scoped like searchStep — a live add (namespace NULL) resolves against
     // canonical/other live steps, never against a namespaced test-doc row (which
-    // load-tests rebuilds, and would otherwise swallow the add).
+    // load-tests rebuilds, and would otherwise swallow the add). Case-level rows
+    // (`kind='case'`, #76) are excluded too — a step add must not reinforce a case.
     const { rows: near } = await client.query(
       `SELECT id FROM step
         WHERE (embedding <=> $1::vector) <= $2
           AND namespace IS NOT DISTINCT FROM $3
+          AND kind IS DISTINCT FROM 'case'
         ORDER BY embedding <=> $1::vector
         LIMIT 1`,
       [v, DEFAULT_RESOLUTION_DISTANCE, namespace],

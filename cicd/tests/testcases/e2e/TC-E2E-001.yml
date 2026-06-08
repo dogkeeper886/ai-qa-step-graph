@@ -12,7 +12,7 @@ steps:
     command: npm --prefix step-store run --silent load-tests
     timeout: 90000
     expectPatterns:
-      - "indexed [0-9]+ step"
+      - "indexed [0-9]+ row"
 
   - name: Find a stored step by a paraphrase
     command: make query Q="execute the smoke test over mcp"
