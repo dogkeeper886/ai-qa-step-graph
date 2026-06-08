@@ -70,6 +70,50 @@ export async function searchStep(
   }));
 }
 
+export interface CaseHit {
+  id: number;
+  ts: string | null;
+  tc: string | null;
+  title: string | null;
+  objective: string | null;
+  namespace: string | null;
+  distance: number; // cosine distance (0 = identical meaning)
+}
+
+/**
+ * Return the test cases whose *objective* (what the case verifies) is nearest
+ * `phrase` by meaning, closest first — the level an agent searches by to check
+ * "is this behaviour already covered?". Searches the case-level rows (`kind='case'`,
+ * #76); `searchStep` covers the step level. `namespace` scopes it; omit for all.
+ */
+export async function searchCases(
+  phrase: string,
+  k = 5,
+  maxDistance = DEFAULT_MAX_DISTANCE,
+  namespace: string | null = null,
+): Promise<CaseHit[]> {
+  const v = toVectorLiteral(await embed(phrase));
+  const { rows } = await pool.query(
+    `SELECT id, namespace, provenance, (embedding <=> $1::vector) AS distance
+       FROM step
+      WHERE kind = 'case'
+        AND (embedding <=> $1::vector) <= $3
+        AND ($4::text IS NULL OR namespace = $4)
+      ORDER BY embedding <=> $1::vector
+      LIMIT $2`,
+    [v, k, maxDistance, namespace],
+  );
+  return rows.map((r) => ({
+    id: Number(r.id),
+    ts: r.provenance?.ts ?? null,
+    tc: r.provenance?.tc ?? null,
+    title: r.provenance?.tc_title ?? null,
+    objective: r.provenance?.objective ?? null,
+    namespace: r.namespace,
+    distance: Number(r.distance),
+  }));
+}
+
 export interface AddResult {
   id: number;
   /** true = reinforced a step that already existed by meaning (no new row). */
@@ -149,4 +193,91 @@ export async function addStep(
   } finally {
     client.release();
   }
+}
+
+export interface OutlineCase {
+  tc: string;
+  title: string | null;
+  objective: string | null;
+}
+export interface OutlineScenario {
+  ts: string;
+  namespace: string | null;
+  cases: OutlineCase[];
+}
+
+/**
+ * The folded map of the suite (#78): each scenario (TS) and its cases (TC) with
+ * titles + objectives — and *no step bodies*, so the shape of many cases fits in
+ * a small response an agent can hold. Built from the case rows (#76). `namespace`
+ * scopes it; omit for all.
+ */
+export async function outline(namespace: string | null = null): Promise<OutlineScenario[]> {
+  const { rows } = await pool.query(
+    `SELECT namespace, provenance
+       FROM step
+      WHERE kind = 'case'
+        AND ($1::text IS NULL OR namespace = $1)
+      ORDER BY namespace, provenance->>'ts', provenance->>'tc'`,
+    [namespace],
+  );
+  const byScenario = new Map<string, OutlineScenario>();
+  for (const r of rows) {
+    const ts = r.provenance?.ts ?? '(no ts)';
+    const key = `${r.namespace ?? ''}|${ts}`;
+    let sc = byScenario.get(key);
+    if (!sc) {
+      sc = { ts, namespace: r.namespace, cases: [] };
+      byScenario.set(key, sc);
+    }
+    sc.cases.push({
+      tc: r.provenance?.tc ?? '(no tc)',
+      title: r.provenance?.tc_title ?? null,
+      objective: r.provenance?.objective ?? null,
+    });
+  }
+  return [...byScenario.values()];
+}
+
+export interface CaseDetail {
+  ts: string;
+  tc: string;
+  title: string | null;
+  objective: string | null;
+  namespace: string | null;
+  steps: { step: number; text: string }[];
+}
+
+/**
+ * Resolve one case to its full readable form from the index (#78): its objective
+ * and ordered steps (action — expected) — the parent a search hit resolves *to*.
+ * Reads the case + step rows for the given ts/tc straight from the store; returns
+ * null if there is no such case. `namespace` disambiguates the same id across repos.
+ */
+export async function getCase(
+  ts: string,
+  tc: string,
+  namespace: string | null = null,
+): Promise<CaseDetail | null> {
+  const { rows } = await pool.query(
+    `SELECT text, kind, namespace, provenance
+       FROM step
+      WHERE provenance->>'ts' = $1 AND provenance->>'tc' = $2
+        AND ($3::text IS NULL OR namespace = $3)`,
+    [ts, tc, namespace],
+  );
+  if (rows.length === 0) return null;
+  const caseRow = rows.find((r) => r.kind === 'case');
+  const stepRows = rows
+    .filter((r) => r.kind === 'step')
+    .sort((a, b) => Number(a.provenance?.step ?? 0) - Number(b.provenance?.step ?? 0));
+  const meta = caseRow?.provenance ?? stepRows[0]?.provenance ?? {};
+  return {
+    ts,
+    tc,
+    title: meta.tc_title ?? null,
+    objective: meta.objective ?? null,
+    namespace: caseRow?.namespace ?? stepRows[0]?.namespace ?? null,
+    steps: stepRows.map((r) => ({ step: Number(r.provenance?.step ?? 0), text: r.text })),
+  };
 }
