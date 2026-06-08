@@ -1,8 +1,8 @@
-# Integration: the DNS-rebinding floor on the HTTP transport (#69).
-# Self-contained — smoke-http.ts spawns its own server on a test port and never
-# touches Postgres (the Origin gate precedes all tool handling), so no `make up`.
+# Integration: the HTTP transport security gate — Origin floor (#69) + bearer
+# token (#70). Self-contained — smoke-http.ts spawns its own server on a test
+# port and never touches Postgres (every gate precedes tool handling), no `make up`.
 id: TC-INTEGRATION-002
-name: HTTP origin guard — foreign Origin rejected, no-Origin client passes
+name: HTTP transport guard — origin floor + bearer token reject before any tool
 suite: integration
 priority: 1
 timeout: 60000
@@ -10,7 +10,7 @@ dependencies: [TC-BUILD-001]
 tags: [integration, mcp, security]
 
 steps:
-  - name: Run the HTTP origin-guard test
+  - name: Run the HTTP transport-guard test
     command: npm --prefix step-store run --silent smoke:http
     timeout: 45000
     expectPatterns:
@@ -19,7 +19,8 @@ steps:
       - "HTTP GUARD FAILED"
 
 criteria: |
-  With the HTTP transport reachable, a request carrying a foreign Origin is
-  rejected with 403 before any tool runs, while a request with no Origin (a
-  non-browser MCP client) passes the gate — proving the DNS-rebinding floor
-  discriminates by Origin, deterministically via smoke-http.ts.
+  With the HTTP transport reachable: GET /healthz is unauthenticated (200); a
+  foreign Origin is rejected 403 even with a valid token; a missing or wrong
+  bearer token is rejected 401 before any tool runs; and a valid token with no
+  Origin reaches real MCP handling (200) — proving the Origin floor and token
+  gate deterministically via smoke-http.ts.

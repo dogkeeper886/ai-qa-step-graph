@@ -12,6 +12,7 @@
  * On stdio the JSON-RPC stream owns stdout, so all logs go to stderr.
  */
 import { createServer } from 'node:http';
+import { timingSafeEqual } from 'node:crypto';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -130,6 +131,24 @@ function originAllowed(origin: string | undefined, allow: Set<string>): boolean 
   return allow.has(origin);
 }
 
+/**
+ * Bearer-token auth (#70). Constant-time check of `Authorization: Bearer <token>`
+ * against the configured token. The lengths are compared first because
+ * `timingSafeEqual` requires equal-length buffers; the token *value* is then
+ * compared in constant time. A length mismatch returns early, so only the
+ * token's length — never its bytes — is timing-distinguishable, which is
+ * acceptable for a high-entropy secret. The scheme keyword is case-insensitive
+ * per RFC 6750; the token itself stays case-sensitive.
+ */
+function tokenValid(authHeader: string | undefined, token: string): boolean {
+  if (!authHeader) return false;
+  const m = /^Bearer (.+)$/i.exec(authHeader);
+  if (!m) return false;
+  const got = Buffer.from(m[1]);
+  const want = Buffer.from(token);
+  return got.length === want.length && timingSafeEqual(got, want);
+}
+
 async function main() {
   const transport = (process.env.MCP_TRANSPORT ?? 'stdio').toLowerCase();
 
@@ -139,12 +158,36 @@ async function main() {
     if (!Number.isInteger(port) || port < 0 || port > 65535) {
       throw new Error(`invalid MCP_HTTP_PORT: ${process.env.MCP_HTTP_PORT}`);
     }
+    // Bearer-token auth (#70): a token is mandatory in http mode — refuse to
+    // start rather than silently serving an open, writable store over the
+    // network. stdio is exempt (local; credentials come from the environment
+    // per the MCP spec).
+    const token = process.env.MCP_AUTH_TOKEN ?? '';
+    if (!token) {
+      throw new Error(
+        'MCP_AUTH_TOKEN is required in http mode (refusing to start an unauthenticated ' +
+          'server). Set it in the environment — `make up` generates one into .env.',
+      );
+    }
     const allow = allowedOrigins(port);
     const http = createServer(async (req, res) => {
-      // Reject a foreign Origin before any tool handler runs (the floor).
+      // Unauthenticated liveness probe — no Origin/auth, so health reflects
+      // real reachability (a 401 must not read as "healthy"). See #70.
+      if (req.method === 'GET' && req.url?.split('?')[0] === '/healthz') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok' }));
+        return;
+      }
+      // Reject a foreign Origin before any tool handler runs (the floor, #69).
       if (!originAllowed(req.headers.origin, allow)) {
         res.writeHead(403, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ error: 'forbidden: origin not allowed' }));
+        return;
+      }
+      // Require a valid bearer token before any tool runs (#70).
+      if (!tokenValid(req.headers.authorization, token)) {
+        res.writeHead(401, { 'content-type': 'application/json', 'www-authenticate': 'Bearer' });
+        res.end(JSON.stringify({ error: 'unauthorized' }));
         return;
       }
       const server = buildServer();

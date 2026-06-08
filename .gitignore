@@ -8,6 +8,9 @@ dist/
 cicd/results/*
 !cicd/results/.gitignore
 
+# Generated auth token (#70) — never commit secrets (.env, .env.tmp, …)
+.env*
+
 # Claude Code local settings
 .claude/settings.local.json
 

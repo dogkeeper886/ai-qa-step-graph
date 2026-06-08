@@ -36,6 +36,10 @@ install:
 # Operate the local step-store stack: Postgres + pgvector + the MCP server.
 
 up:
+	@# A token is mandatory in http mode (#70); generate one once into .env
+	@# (gitignored, reused every session) so the stack stays one command to start.
+	@test -f .env || { node -e "console.log('MCP_AUTH_TOKEN=' + require('crypto').randomBytes(32).toString('hex'))" > .env.tmp && mv .env.tmp .env; \
+		echo "Generated .env with a fresh MCP_AUTH_TOKEN (gitignored) — HTTP clients must send it."; }
 	$(COMPOSE) up -d --build --wait
 	@$(COMPOSE) exec -T db psql -U stepstore -d stepstore < step-store/schema.sql >/dev/null
 	@echo "Stack up: Postgres+pgvector and MCP server (HTTP :3000)."
@@ -51,11 +55,13 @@ status:
 	@echo "Containers:"
 	@$(COMPOSE) ps --format '  {{.Service}}: {{.State}} ({{.Health}})' 2>/dev/null | grep . || echo "  (stack is down)"
 	@printf "Postgres:         "; $(COMPOSE) exec -T db pg_isready -U stepstore -d stepstore >/dev/null 2>&1 && echo "reachable" || echo "down"
-	@printf "MCP (HTTP :3000): "; node -e "fetch('http://localhost:3000/').then(()=>process.exit(0)).catch(()=>process.exit(1))" >/dev/null 2>&1 && echo "responding" || echo "down"
+	@printf "MCP (HTTP :3000): "; node -e "fetch('http://localhost:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" >/dev/null 2>&1 && echo "responding" || echo "down"
 
 Q ?= log in
 query:
-	@npm --prefix step-store run --silent query -- "$(Q)"
+	@# Source the generated token (#70) so the query client can authenticate;
+	@# Compose reads .env itself, so it is only needed here on the host side.
+	@set -a; [ -f .env ] && source ./.env; set +a; npm --prefix step-store run --silent query -- "$(Q)"
 
 # The manual merge gate (STORY-002 #42). CI never auto-runs here, so run the
 # checks on demand before merging: stand the stack up, run the assert-first
