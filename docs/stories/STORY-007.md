@@ -72,4 +72,4 @@ edges to settle.)*
 
 - Created: 2026-06-08
 - Issues: #76 (index objective), #77 (search_cases), #78 (outline + get_case), #79 (wire qa-workflow + CRUD test)
-- PRs (open): #80 (#76)
+- PRs (merged): #80 (#76 — objective indexed as a case-level row)

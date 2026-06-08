@@ -1,0 +1,27 @@
+# E2E: the case-retrieval surface (#77 search_cases, #78 outline/get_case) and
+# the CRUD loop (#79) over MCP. Self-contained — smoke-cases.ts writes a
+# throwaway test doc, re-indexes, exercises the tools, and always cleans up.
+# Needs the stack up (DB) — `make up`.
+id: TC-E2E-002
+name: case retrieval + CRUD — search_cases, outline, get_case, create/read/update/delete
+suite: e2e
+priority: 2
+timeout: 120000
+dependencies: [TC-INTEGRATION-001]
+tags: [e2e, cases]
+
+steps:
+  - name: Run the case-retrieval + CRUD smoke
+    command: npm --prefix step-store run --silent smoke:cases
+    timeout: 90000
+    expectPatterns:
+      - "CASES PASSED"
+    rejectPatterns:
+      - "CASES FAILED"
+
+criteria: |
+  search_cases finds a case by its objective (and the case row never leaks into
+  step search), outline returns the folded map without step bodies, and get_case
+  returns one case in full; and a test doc created → searched by objective →
+  updated → deleted is findable at each stage then gone — proving the
+  case-retrieval surface and the CRUD loop deterministically via smoke-cases.ts.
