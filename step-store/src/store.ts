@@ -112,11 +112,13 @@ export async function addStep(
     // Resolve: is this the same step as one already stored *in the same namespace*?
     // Scoped like searchStep — a live add (namespace NULL) resolves against
     // canonical/other live steps, never against a namespaced test-doc row (which
-    // load-tests rebuilds, and would otherwise swallow the add).
+    // load-tests rebuilds, and would otherwise swallow the add). Case-level rows
+    // (`kind='case'`, #76) are excluded too — a step add must not reinforce a case.
     const { rows: near } = await client.query(
       `SELECT id FROM step
         WHERE (embedding <=> $1::vector) <= $2
           AND namespace IS NOT DISTINCT FROM $3
+          AND kind IS DISTINCT FROM 'case'
         ORDER BY embedding <=> $1::vector
         LIMIT 1`,
       [v, DEFAULT_RESOLUTION_DISTANCE, namespace],
