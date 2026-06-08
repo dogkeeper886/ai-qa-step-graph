@@ -267,8 +267,14 @@ export async function getCase(
     [ts, tc, namespace],
   );
   if (rows.length === 0) return null;
-  const caseRow = rows.find((r) => r.kind === 'case');
-  const stepRows = rows
+  // The same ts/tc can exist in more than one namespace — the documented format
+  // is TS-NN/TC-NN, so repos reuse the same ids. When the caller didn't scope,
+  // resolve to a single case (the case row's namespace) so steps from two repos
+  // don't splice together.
+  const targetNs = namespace ?? rows.find((r) => r.kind === 'case')?.namespace ?? rows[0].namespace;
+  const scoped = rows.filter((r) => r.namespace === targetNs);
+  const caseRow = scoped.find((r) => r.kind === 'case');
+  const stepRows = scoped
     .filter((r) => r.kind === 'step')
     .sort((a, b) => Number(a.provenance?.step ?? 0) - Number(b.provenance?.step ?? 0));
   const meta = caseRow?.provenance ?? stepRows[0]?.provenance ?? {};
@@ -277,7 +283,7 @@ export async function getCase(
     tc,
     title: meta.tc_title ?? null,
     objective: meta.objective ?? null,
-    namespace: caseRow?.namespace ?? stepRows[0]?.namespace ?? null,
+    namespace: targetNs,
     steps: stepRows.map((r) => ({ step: Number(r.provenance?.step ?? 0), text: r.text })),
   };
 }
