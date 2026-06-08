@@ -48,13 +48,13 @@ function writeDoc(c: Case) {
 id: TS-90
 title: Cases smoke (throwaway)
 namespace: ${NS}
-story: STORY-007
-status: green
 ---
 
 ## Why this scenario exists
 
 Throwaway fixture for the case-retrieval + CRUD smoke (#77-#79). The test deletes it.
+No \`story:\` link on purpose — if a hard kill ever leaves it behind, the drift gate
+has nothing to flag.
 
 ### TC-01: ${c.title}
 

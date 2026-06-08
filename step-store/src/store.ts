@@ -236,7 +236,13 @@ export async function outline(namespace: string | null = null): Promise<OutlineS
       objective: r.provenance?.objective ?? null,
     });
   }
-  return [...byScenario.values()];
+  // Numeric-aware ordering so TC-2 sorts before TC-10 (ids are TS-NN / TC-NN);
+  // a plain string sort would put TC-10 before TC-2.
+  const cmp = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true });
+  const scenarios = [...byScenario.values()];
+  scenarios.sort((a, b) => cmp(a.namespace ?? '', b.namespace ?? '') || cmp(a.ts, b.ts));
+  for (const s of scenarios) s.cases.sort((a, b) => cmp(a.tc, b.tc));
+  return scenarios;
 }
 
 export interface CaseDetail {
