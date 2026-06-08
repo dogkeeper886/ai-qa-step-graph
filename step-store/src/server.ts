@@ -17,7 +17,14 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
-import { searchStep, addStep, DEFAULT_MAX_DISTANCE } from './store.js';
+import {
+  searchStep,
+  searchCases,
+  addStep,
+  outline,
+  getCase,
+  DEFAULT_MAX_DISTANCE,
+} from './store.js';
 
 /** Build an MCP server with the step-store tools registered. */
 function buildServer(): McpServer {
@@ -99,6 +106,89 @@ function buildServer(): McpServer {
           { type: 'text', text: JSON.stringify({ added: !resolved, id, resolved }, null, 2) },
         ],
       };
+    },
+  );
+
+  server.registerTool(
+    'search_cases',
+    {
+      title: 'Find test cases by what they verify',
+      description:
+        'Return the test case(s) whose objective (what the case verifies) is nearest the ' +
+        'given phrase, or a clear "no match". Use this to check whether a behaviour is ' +
+        'already covered before authoring a new test — coverage converges instead of ' +
+        'duplicating. Each hit carries its ts/tc; read it in full with get_case.',
+      inputSchema: {
+        phrase: z.string().describe('the behaviour / objective to look up'),
+        k: z.number().int().positive().max(50).optional().describe('max results (default 5)'),
+        max_distance: z
+          .number()
+          .positive()
+          .optional()
+          .describe(`cosine-distance cutoff for a match (default ${DEFAULT_MAX_DISTANCE})`),
+        namespace: z
+          .string()
+          .optional()
+          .describe('scope the search to one repo/tenant (default: all namespaces)'),
+      },
+    },
+    async ({ phrase, k, max_distance, namespace }) => {
+      const hits = await searchCases(
+        phrase,
+        k ?? 5,
+        max_distance ?? DEFAULT_MAX_DISTANCE,
+        namespace ?? null,
+      );
+      const payload =
+        hits.length === 0
+          ? { match: false, message: 'no match', hits: [] }
+          : { match: true, hits };
+      return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }] };
+    },
+  );
+
+  server.registerTool(
+    'outline',
+    {
+      title: 'Outline the test suite (the folded map)',
+      description:
+        'Return the suite folded to scenarios → cases with their objectives and no step ' +
+        'bodies, so the shape of many cases fits in a small response. Use it to orient ' +
+        'before drilling into a case with get_case. Optionally scope to one namespace.',
+      inputSchema: {
+        namespace: z
+          .string()
+          .optional()
+          .describe('scope to one repo/tenant (default: all namespaces)'),
+      },
+    },
+    async ({ namespace }) => {
+      const scenarios = await outline(namespace ?? null);
+      return { content: [{ type: 'text', text: JSON.stringify({ scenarios }, null, 2) }] };
+    },
+  );
+
+  server.registerTool(
+    'get_case',
+    {
+      title: 'Read one whole test case',
+      description:
+        'Return one case in full — its objective and ordered steps (action — expected ' +
+        'result) — to read it in context or reuse as a template. Returns a clear ' +
+        '"not found" if the ts/tc is unknown.',
+      inputSchema: {
+        ts: z.string().describe('the scenario id, e.g. "TS-01"'),
+        tc: z.string().describe('the case id, e.g. "TC-01"'),
+        namespace: z
+          .string()
+          .optional()
+          .describe('disambiguate when the same id exists in more than one repo'),
+      },
+    },
+    async ({ ts, tc, namespace }) => {
+      const detail = await getCase(ts, tc, namespace ?? null);
+      const payload = detail ?? { found: false, message: `no case ${ts}/${tc}` };
+      return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }] };
     },
   );
 

@@ -31,6 +31,10 @@ Fits in the qa-workflow:
         │   - (Format and field meanings: docs/tests/README.md.)
         │
         ├─► Step 2: Write each case (TC) — reuse before re-inventing (dogfood the store)
+        │   - Before writing a new case, check whether its objective is already
+        │     covered:  make query-cases Q="<what the case verifies>"
+        │     If a close case comes back, extend or adjust it instead of adding a
+        │     near-duplicate.
         │   - For each step you are about to write, ask the store first:
         │       make query Q="<the action you mean>"
         │     If a vetted step comes back close, phrase yours to match it — same
@@ -49,7 +53,9 @@ Fits in the qa-workflow:
 ## API Notes
 
 - Reuse is the point of the store: `search_step` (via `make query`) makes a vetted
-  step findable so coverage converges instead of duplicating.
+  step findable so coverage converges instead of duplicating. `search_cases` (via
+  `make query-cases`) does the same at the case level — find an existing test by
+  what it verifies before authoring a near-duplicate.
 - `story_hash`: `sha256sum docs/stories/STORY-XXX.md`.
 - Producer paired with `/qw-review-cases`.
 ```

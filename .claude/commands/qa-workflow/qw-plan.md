@@ -28,8 +28,9 @@ Fits in the qa-workflow:
         │   - If an on-request target: restate what behaviour is to be verified.
         │
         ├─► Step 2: Check what already exists (dogfood the store)
-        │   - Search the step-store for steps/cases already covering this:
-        │       make query Q="<the behaviour>"
+        │   - Search the store for test cases already covering this behaviour —
+        │     by what a test verifies, not its step text:
+        │       make query-cases Q="<the behaviour>"
         │     so the plan reuses vetted coverage instead of duplicating it.
         │   - List the docs/tests/ scenarios already linked to this story:
         │       grep -l 'story: STORY-XXX' docs/tests/

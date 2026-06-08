@@ -4,7 +4,7 @@
 # run the on-demand checks. Run `make help` for the targets.
 
 SHELL := /bin/bash
-.PHONY: help install up down clean status query ci
+.PHONY: help install up down clean status query query-cases ci
 
 COMPOSE := docker compose
 
@@ -19,7 +19,8 @@ help:
 	@echo "  make down      # Stop the stack"
 	@echo "  make clean     # Stop and wipe to a fresh empty state (drops the volume)"
 	@echo "  make status    # Show whether the stack is up and healthy"
-	@echo "  make query Q=\"...\"  # Quick semantic lookup against the store"
+	@echo "  make query Q=\"...\"        # Quick semantic lookup of steps against the store"
+	@echo "  make query-cases Q=\"...\"  # Quick lookup of test cases by their objective"
 	@echo "  make ci        # Run the full check on demand (suite + drift) — the manual merge gate"
 
 # ─── Setup (STORY-003) ──────────────────────────────────────────────────────
@@ -62,6 +63,10 @@ query:
 	@# Source the generated token (#70) so the query client can authenticate;
 	@# Compose reads .env itself, so it is only needed here on the host side.
 	@set -a; [ -f .env ] && source ./.env; set +a; npm --prefix step-store run --silent query -- "$(Q)"
+
+query-cases:
+	@# The objective side of `query` (#77): find test cases by what they verify.
+	@set -a; [ -f .env ] && source ./.env; set +a; npm --prefix step-store run --silent query-cases -- "$(Q)"
 
 # The manual merge gate (STORY-002 #42). CI never auto-runs here, so run the
 # checks on demand before merging: stand the stack up, run the assert-first
