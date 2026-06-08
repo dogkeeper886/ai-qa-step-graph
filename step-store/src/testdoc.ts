@@ -75,7 +75,9 @@ export function parseScenario(md: string): Scenario {
     cases.push({
       tc: matches[i][1],
       title: matches[i][2].trim(),
-      objective: block.match(/\*\*Objective:\*\*\s*(.+)/)?.[1]?.trim() ?? null,
+      // [ \t]* not \s* — \s would cross the newline of an empty `**Objective:**`
+      // line and capture the next line (e.g. the Script line) as the objective.
+      objective: block.match(/\*\*Objective:\*\*[ \t]*(.+)/)?.[1]?.trim() ?? null,
       script: block.match(/\*\*Script:\*\*\s*(\S+)/)?.[1] ?? null,
       steps,
     });
