@@ -35,6 +35,31 @@ takes a minute; later runs are fast.
 The server speaks MCP over **stdio** (default, for a local agent) or **HTTP**
 (`MCP_TRANSPORT=http`, what `make up` runs on `:3000`). Pick the mode that fits.
 
+### HTTP auth and LAN exposure
+
+The HTTP transport **requires a bearer token** — it refuses to start without one, so
+it is never silently open. `make up` generates one into a gitignored `.env` on first
+run; read it back with `grep MCP_AUTH_TOKEN .env`. Every HTTP client sends it as
+`Authorization: Bearer <token>` (examples below). stdio is local and needs no token.
+
+By default the server binds to **localhost only**. To reach it from another host on a
+trusted LAN, set `MCP_BIND_HOST`:
+
+```bash
+MCP_BIND_HOST=0.0.0.0 make up        # or a specific LAN IP, e.g. 192.168.1.50
+```
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `MCP_AUTH_TOKEN` | bearer token HTTP clients must send (required in http mode) | generated into `.env` by `make up` |
+| `MCP_BIND_HOST` | host interface the MCP port binds to | `127.0.0.1` (localhost only) |
+| `MCP_ALLOWED_ORIGINS` | extra browser origins to allow, comma-separated (localhost always allowed) | none |
+
+> **Security.** This is the trusted-LAN tier: the token travels over **plaintext
+> HTTP**, so only expose it on a wire you trust. Postgres stays bound to `127.0.0.1` —
+> keep it private. Rotate the token by deleting `.env` and re-running `make up`. For a
+> public server, add TLS and OAuth 2.1 (out of scope here).
+
 ### Docker image (HTTP)
 
 `make up` builds and runs the server as the `mcp` Compose service at
@@ -43,7 +68,8 @@ The server speaks MCP over **stdio** (default, for a local agent) or **HTTP**
 ```bash
 docker build -t step-store ./step-store
 docker run --rm -p 3000:3000 --add-host=host.docker.internal:host-gateway \
-  -e DATABASE_URL=postgres://stepstore:stepstore@host.docker.internal:5432/stepstore step-store
+  -e DATABASE_URL=postgres://stepstore:stepstore@host.docker.internal:5432/stepstore \
+  -e MCP_AUTH_TOKEN="$(grep MCP_AUTH_TOKEN .env | cut -d= -f2)" step-store
 ```
 
 ### Run from source (dev, stdio)
@@ -65,7 +91,8 @@ claude mcp add step-store -- npm --prefix step-store run server
 HTTP, against the running container (after `make up`):
 
 ```bash
-claude mcp add --transport http step-store http://localhost:3000/
+claude mcp add --transport http step-store http://localhost:3000/ \
+  --header "Authorization: Bearer $(grep MCP_AUTH_TOKEN .env | cut -d= -f2)"
 ```
 
 The repo also ships a committed [`.mcp.json`](.mcp.json) that registers the stdio
@@ -87,12 +114,15 @@ In `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project) — stdio from 
 }
 ```
 
-Or the HTTP (Docker) server, after `make up`:
+Or the HTTP (Docker) server, after `make up` (send the token from `.env`):
 
 ```json
 {
   "mcpServers": {
-    "step-store": { "url": "http://localhost:3000/" }
+    "step-store": {
+      "url": "http://localhost:3000/",
+      "headers": { "Authorization": "Bearer <MCP_AUTH_TOKEN from .env>" }
+    }
   }
 }
 ```

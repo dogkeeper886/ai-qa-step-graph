@@ -25,6 +25,9 @@ services:
       # LAN-reachable browser origins to allow-list (comma-separated). localhost
       # is always allowed; non-browser clients send no Origin and pass. See #69.
       MCP_ALLOWED_ORIGINS: "${MCP_ALLOWED_ORIGINS:-}"
+      # Required in http mode (#70): the server refuses to start without it.
+      # `make up` generates one into .env; clients send it as a bearer token.
+      MCP_AUTH_TOKEN: "${MCP_AUTH_TOKEN:-}"
     # Default binds to localhost only — set MCP_BIND_HOST=0.0.0.0 (or a specific
     # LAN IP) to expose the server to other hosts. Postgres (db) stays private.
     ports:
@@ -33,7 +36,9 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(()=>process.exit(0)).catch(()=>process.exit(1))"]
+      # Hit the unauthenticated liveness probe and require a 2xx — so a 401
+      # (auth on, no token) does not falsely read as healthy. See #70.
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 3s
       timeout: 3s
       retries: 20

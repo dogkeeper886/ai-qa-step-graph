@@ -14,9 +14,15 @@ import { parseToolResult } from './mcp.js';
 const phrase = process.argv.slice(2).join(' ').trim() || 'log in';
 const url = process.env.MCP_HTTP_URL ?? 'http://localhost:3000/';
 
+// The http server requires a bearer token (#70); send it when configured.
+const token = process.env.MCP_AUTH_TOKEN;
+const opts = token
+  ? { requestInit: { headers: { Authorization: `Bearer ${token}` } } }
+  : undefined;
+
 const client = new Client({ name: 'query', version: '0.1.0' });
 try {
-  await client.connect(new StreamableHTTPClientTransport(new URL(url)));
+  await client.connect(new StreamableHTTPClientTransport(new URL(url), opts));
   const res = await client.callTool({ name: 'search_step', arguments: { phrase } });
   const payload = parseToolResult(res);
   if (!payload.match) {
