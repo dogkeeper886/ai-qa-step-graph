@@ -1,0 +1,25 @@
+# Integration: the DNS-rebinding floor on the HTTP transport (#69).
+# Self-contained — smoke-http.ts spawns its own server on a test port and never
+# touches Postgres (the Origin gate precedes all tool handling), so no `make up`.
+id: TC-INTEGRATION-002
+name: HTTP origin guard — foreign Origin rejected, no-Origin client passes
+suite: integration
+priority: 1
+timeout: 60000
+dependencies: [TC-BUILD-001]
+tags: [integration, mcp, security]
+
+steps:
+  - name: Run the HTTP origin-guard test
+    command: npm --prefix step-store run --silent smoke:http
+    timeout: 45000
+    expectPatterns:
+      - "HTTP GUARD PASSED"
+    rejectPatterns:
+      - "HTTP GUARD FAILED"
+
+criteria: |
+  With the HTTP transport reachable, a request carrying a foreign Origin is
+  rejected with 403 before any tool runs, while a request with no Origin (a
+  non-browser MCP client) passes the gate — proving the DNS-rebinding floor
+  discriminates by Origin, deterministically via smoke-http.ts.

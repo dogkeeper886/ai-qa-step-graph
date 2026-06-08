@@ -104,6 +104,32 @@ function buildServer(): McpServer {
   return server;
 }
 
+/**
+ * DNS-rebinding floor (#69). Once the HTTP transport is reachable beyond
+ * localhost, a page open in a browser on the LAN can be tricked — via DNS
+ * rebinding — into POSTing to the server and driving `add_step`/`search_step`.
+ * A browser always attaches an `Origin` header to such a request, so we reject
+ * any request whose Origin is not allow-listed. A request with NO Origin is a
+ * non-browser MCP client (Claude Code, curl, the stdio bridge) for which the
+ * rebinding threat does not apply, so it passes. (The SDK's built-in
+ * `enableDnsRebindingProtection` is `@deprecated` in favour of exactly this
+ * external check.) localhost is always allowed; add LAN/browser origins via
+ * `MCP_ALLOWED_ORIGINS` (comma-separated).
+ */
+function allowedOrigins(port: number): Set<string> {
+  const defaults = [`http://localhost:${port}`, `http://127.0.0.1:${port}`];
+  const extra = (process.env.MCP_ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return new Set([...defaults, ...extra]);
+}
+
+function originAllowed(origin: string | undefined, allow: Set<string>): boolean {
+  if (!origin) return true; // non-browser client; DNS rebinding needs a browser
+  return allow.has(origin);
+}
+
 async function main() {
   const transport = (process.env.MCP_TRANSPORT ?? 'stdio').toLowerCase();
 
@@ -113,7 +139,14 @@ async function main() {
     if (!Number.isInteger(port) || port < 0 || port > 65535) {
       throw new Error(`invalid MCP_HTTP_PORT: ${process.env.MCP_HTTP_PORT}`);
     }
+    const allow = allowedOrigins(port);
     const http = createServer(async (req, res) => {
+      // Reject a foreign Origin before any tool handler runs (the floor).
+      if (!originAllowed(req.headers.origin, allow)) {
+        res.writeHead(403, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: 'forbidden: origin not allowed' }));
+        return;
+      }
       const server = buildServer();
       const httpTransport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
       res.on('close', () => {
