@@ -4,7 +4,7 @@
 Check the proposed scenarios cover the story — and stay coverage, not a frozen
 step-by-step spec.
 
-Target: the `[STORY-XXX] Test Plan` issue written by `/qw-plan` (label `plan`).
+Target: the `[STORY-XXX] Test Plan` issue written by `/qw-plan` (label `test-plan`).
 
 ## PURPOSE
 
@@ -24,8 +24,8 @@ Fits in the qa-workflow:
     /qw-review-plan STORY-003
         │
         ├─► Step 1: Read the test-plan issue
-        │   - Find it (search the full title — dev and qa share the `plan` label):
-        │       gh issue list --search "[STORY-XXX] Test Plan" --label plan --state all
+        │   - Find it (`test-plan` is qa's own label — distinct from dev's `plan`):
+        │       gh issue list --search "[STORY-XXX] Test Plan" --label test-plan --state all
         │     (ad-hoc target: search "Test Plan: <subject>"). Read its scenarios.
         │   - If none exists, report and stop (run `/qw-plan` first).
         │
