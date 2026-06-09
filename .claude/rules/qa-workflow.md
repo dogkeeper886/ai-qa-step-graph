@@ -11,17 +11,24 @@ written as readable markdown in `docs/tests/`, bound to the `cicd/` runner, and 
 for drift. Each producer is paired with a review, the same discipline `dev-workflow`
 and `reviewing-artifacts` enforce.
 
+> **Persisted test plan (STORY-009), landing incrementally.** `qw-plan` opens a
+> `[STORY-XXX] Test Plan` GitHub issue (label `plan`) instead of leaving scenarios in chat;
+> `qw-review-plan` reviews that issue; `qw-cases` reads it and the `TS-*.md` trace back via a
+> `plan:` field (the issue number). The command edits are #104 (`qw-plan`) / #105
+> (`qw-review-plan`) / #106 (`qw-cases`) — until they land, the plan lives only in the
+> conversation as before.
+
 ## The flow
 
 ```
    docs/stories/STORY-XXX.md   ──or──  "write a test for X"   (on request)
             │
             ▼
-   qw-plan ───────► qw-review-plan      what to test — scenarios that cover the story
-            │
+   qw-plan ───────► qw-review-plan      what to test — scenarios persisted as the
+            │                            [STORY-XXX] Test Plan issue (cover the story)
             ▼
-   qw-cases ──────► qw-review-cases     write docs/tests/TS-*.md (the #23 format);
-            │                            dogfood search_step first — reuse a vetted step
+   qw-cases ──────► qw-review-cases     write docs/tests/TS-*.md (the #23 format) from the
+            │                            plan; dogfood search_step first — reuse a vetted step
             ▼
    qw-bind ───────► qw-review-bind      bind each case ↔ a cicd YAML (audit, not codegen)
             │
@@ -35,6 +42,20 @@ and `reviewing-artifacts` enforce.
    qw-drift          freshness gate (CI + on demand): story changed → stale;
                      doc↔script diverged → unbound. Loops back to qw-cases.
 ```
+
+## The test-plan issue (STORY-009)
+
+`qw-plan`'s scenarios persist as a **GitHub issue**, titled `[STORY-XXX] Test Plan`,
+labelled `plan` — the same plan-as-issue form `dev-workflow` uses, with a distinct title so
+it never collides with dev's `[STORY-XXX] Plan`. Its body holds the scenarios (each a
+TS-to-be, with the cases it will hold). `qw-review-plan` reviews the issue; `qw-cases` reads
+it and records the issue number in each `TS-*.md` `plan:` field (see `docs/tests/README.md`).
+
+- **Ad-hoc target** ("write a test for X", no story): the plan issue is titled `Test Plan:
+  <subject>` (no `[STORY-XXX]` prefix) — an issue needs no story anchor, so the no-story
+  path just works. Trivial one-off tests may skip the plan and go straight to `qw-cases`.
+- The plan issue is **not drift-watched** — `qw-drift` still anchors each `TS-*.md` to its
+  story via `story_hash`; a plan diverging from its tests is out of scope (a future hook).
 
 ## Producer → review pairing
 

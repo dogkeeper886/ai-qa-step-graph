@@ -9,6 +9,10 @@ checks. The executable (`cicd/tests/testcases/**/*.yml`) is the source of truth 
 This format realizes [STORY-004](../stories/STORY-004.md); the flow it belongs to
 is the [#21 design record](https://github.com/dogkeeper886/ai-qa-step-graph/issues/21).
 
+The "what to test" that precedes these docs is the **test-plan issue** (`[STORY-XXX] Test
+Plan`, written by `qw-plan`); each `TS-*.md` traces back to it via the `plan:` field below.
+See `.claude/rules/qa-workflow.md`.
+
 ## One file = one scenario (TS), many cases (TC)
 
 Mirrors how QA test cases are conventionally authored: a **scenario** groups related
@@ -34,6 +38,7 @@ id: TS-01                       # scenario id, unique within the namespace
 title: Stack builds and runs its lifecycle
 namespace: ai-qa-step-graph     # which repo/tenant this test belongs to (multi-tenant key)
 story: STORY-003                # the need this scenario verifies (→ docs/stories/STORY-003.md)
+plan: 102                       # the [STORY-XXX] Test Plan issue this scenario came from (qw-cases sets it)
 issue: 23                       # the implementing issue (optional)
 status: green                   # green | stale | unbound  (maintained by the drift gate, #27)
 story_hash: 7474d8b6…           # sha256 of the linked story file at last sync (drift anchor)
@@ -45,6 +50,8 @@ story_hash: 7474d8b6…           # sha256 of the linked story file at last sync
   security boundary. This repo's own tests use `ai-qa-step-graph`.
 - `story` + `story_hash` are the drift anchor: when the story file changes, its hash no
   longer matches and the scenario is flagged `stale` (#27).
+- `plan` traces the scenario back to the `[STORY-XXX] Test Plan` issue it was authored from
+  (`qw-cases` sets it). Optional — absent when a test was written without a plan.
 - The **`Script:` binding is per-TC, not in front-matter** — a scenario's cases can map
   to different executables.
 
