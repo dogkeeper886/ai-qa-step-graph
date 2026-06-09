@@ -16,7 +16,8 @@ it's wrong.
 
 Fits between `/dw-tasks` (creates issues) and `/dw-implement` (works one):
 
-    dw-story → dw-review-story → dw-tasks → dw-review-tasks → dw-implement → …
+    dw-story → dw-review-story → dw-plan → [human reviews the plan issue]
+             → dw-tasks → dw-review-tasks → dw-implement → …
 
 ---
 
@@ -27,14 +28,19 @@ Fits between `/dw-tasks` (creates issues) and `/dw-implement` (works one):
         ├─► Step 1: Gather
         │   - If no story ID, list docs/stories/ and ask which to review
         │   - Read docs/stories/STORY-XXX.md (the goal + "Success Looks Like")
-        │   - List its issues:
+        │   - Find the plan issue (if any): note its number <plan> — none means
+        │     trivial work that skipped the plan stage:
+        │     gh issue list --search "[STORY-XXX] Plan" --label plan --state all
+        │   - List its task issues (the plan issue is the parent, not a task):
         │     gh issue list --search "[STORY-XXX]" --state all --json number,title,labels,body
         │   - If no issues exist, report and stop (run /dw-tasks first)
         │
-        ├─► Step 2: Coverage — the issues vs the story
+        ├─► Step 2: Coverage — the issues vs the story (and plan)
         │   - [ ] Every item in the story's "Success Looks Like" is covered by an issue
         │   - [ ] Nothing essential to delivering the story is missing
         │   - [ ] No issue goes beyond the story's goal — each traces back to the need
+        │   - [ ] When a plan exists: each task links back to it ("Part of #<plan>") —
+        │         flag any task missing the link. No plan → skip (trivial path).
         │
         ├─► Step 3: Each issue
         │   - [ ] One clear job (title + Goal say one thing)
