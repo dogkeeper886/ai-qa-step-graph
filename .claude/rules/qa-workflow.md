@@ -11,13 +11,6 @@ written as readable markdown in `docs/tests/`, bound to the `cicd/` runner, and 
 for drift. Each producer is paired with a review, the same discipline `dev-workflow`
 and `reviewing-artifacts` enforce.
 
-> **Persisted test plan (STORY-009), landing incrementally.** `qw-plan` opens a
-> `[STORY-XXX] Test Plan` GitHub issue (label `plan`) instead of leaving scenarios in chat;
-> `qw-review-plan` reviews that issue; `qw-cases` reads it and the `TS-*.md` trace back via a
-> `plan:` field (the issue number). The command edits are #104 (`qw-plan`) / #105
-> (`qw-review-plan`) / #106 (`qw-cases`) — until they land, the plan lives only in the
-> conversation as before.
-
 ## The flow
 
 ```

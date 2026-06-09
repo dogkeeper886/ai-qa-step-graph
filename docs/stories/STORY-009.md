@@ -31,5 +31,6 @@ artifact to check.
 ## Status
 
 - Created: 2026-06-09
-- Plan: #102
-- Issues: #103 (overall), #104, #105, #106
+- Completed: 2026-06-09
+- Plan: #102 (realized)
+- Issues: #103 (design ✓), #104 (qw-plan ✓), #105 (qw-review-plan ✓), #106 (qw-cases ✓)
