@@ -60,7 +60,7 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-## 5. Dev-workflow discipline
+## 5. Dev & QA workflow discipline
 
 Substantial work flows through a pipeline; each step is a gate that stops for a
 human decision (commands suggest the next, they never auto-run it):
@@ -74,6 +74,17 @@ dw-story → dw-review-story → dw-plan → [human reviews the plan issue]
 The plan stage (`dw-plan` → a reviewed plan issue → `dw-tasks`) is STORY-008; the full
 flow + producer→review pairing lives in `.claude/rules/dev-workflow.md`. Trivial work
 skips the plan: `dw-story → dw-tasks`.
+
+**qa-workflow** is the sibling pipeline — same gated discipline, turning a story into a
+trustworthy test:
+
+```
+qw-plan → qw-review-plan → qw-cases → qw-review-cases → qw-bind
+       → qw-review-bind → qw-run → qw-drift
+```
+
+The persisted test plan (`qw-plan` → a `[STORY-XXX] Test Plan` issue → `qw-cases`) is
+STORY-009; the full flow + pairing lives in `.claude/rules/qa-workflow.md`.
 
 Two review gates are external skills this repo does not own — invoke them by hand:
 - `code-review` (bundled): adversarial diff review. Run after `dw-implement`,
