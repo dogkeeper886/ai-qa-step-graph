@@ -1,4 +1,4 @@
-# Break Story into GitHub Issues
+# Break a Plan into GitHub Task Issues
 
 ```
 Break a reviewed plan (or a story) into GitHub task issues, each linked back to it.
