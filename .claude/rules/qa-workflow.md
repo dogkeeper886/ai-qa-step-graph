@@ -39,8 +39,8 @@ and `reviewing-artifacts` enforce.
 ## The test-plan issue (STORY-009)
 
 `qw-plan`'s scenarios persist as a **GitHub issue**, titled `[STORY-XXX] Test Plan`,
-labelled `plan` — the same plan-as-issue form `dev-workflow` uses, with a distinct title so
-it never collides with dev's `[STORY-XXX] Plan`. Its body holds the scenarios (each a
+labelled `test-plan` — the same plan-as-issue form `dev-workflow` uses (dev's plans carry
+`plan`), with its own label so it never collides with dev's `[STORY-XXX] Plan`. Its body holds the scenarios (each a
 TS-to-be, with the cases it will hold). `qw-review-plan` reviews the issue; `qw-cases` reads
 it and records the issue number in each `TS-*.md` `plan:` field (see `docs/tests/README.md`).
 

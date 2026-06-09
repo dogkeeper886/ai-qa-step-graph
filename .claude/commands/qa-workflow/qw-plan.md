@@ -37,8 +37,8 @@ Fits in the qa-workflow:
         │   - List the docs/tests/ scenarios already linked to this story:
         │       grep -l 'story: STORY-XXX' docs/tests/
         │   - Check for an existing test-plan issue (extend it, don't duplicate):
-        │       gh issue list --search "[STORY-XXX] Test Plan" --label plan --state all
-        │     (search the full title — dev and qa both use the `plan` label)
+        │       gh issue list --search "[STORY-XXX] Test Plan" --label test-plan --state all
+        │     (`test-plan` is qa's own label — distinct from dev's `plan`)
         │
         ├─► Step 3: Propose scenarios
         │   - Break the need into scenarios (TS-to-be), each:
@@ -48,11 +48,11 @@ Fits in the qa-workflow:
         │
         ├─► Step 4: Open the test-plan issue
         │   - Ensure the label (idempotent):
-        │       gh label create "plan" --color "5319e7" --description "The approach for a story, before tasks" --force
+        │       gh label create "test-plan" --color "006b75" --description "The qa test plan for a story (what to test)" --force
         │   - Write the scenarios into a GitHub issue so they outlive the session
         │     (the template below). Title: [STORY-XXX] Test Plan
-        │     (ad-hoc target → "Test Plan: <subject>", no story prefix). Label: plan.
-        │       gh issue create --label "plan" --title "[STORY-XXX] Test Plan" --body "…"
+        │     (ad-hoc target → "Test Plan: <subject>", no story prefix). Label: test-plan.
+        │       gh issue create --label "test-plan" --title "[STORY-XXX] Test Plan" --body "…"
         │
         └─► Step 5: Hand off — stop for review
             - Show the test-plan issue URL for `/qw-review-plan`, then `/qw-cases`.
@@ -76,9 +76,9 @@ Fits in the qa-workflow:
 ## API Notes
 
 - A scenario here is a *plan item*, not yet a file — `qw-cases` writes the doc.
-- The scenarios persist as a `[STORY-XXX] Test Plan` issue (label `plan`; ad-hoc →
-  `Test Plan: <subject>`) — the same plan-as-issue form `dev-workflow` uses, with a
-  distinct title so it never collides with dev's `[STORY-XXX] Plan`.
+- The scenarios persist as a `[STORY-XXX] Test Plan` issue (label `test-plan`; ad-hoc →
+  `Test Plan: <subject>`) — the same plan-as-issue form `dev-workflow` uses, with its own
+  `test-plan` label so it never collides with dev's `[STORY-XXX] Plan` (label `plan`).
 - The story is the goal; keep the plan to coverage, not step detail.
 - Producer paired with `/qw-review-plan`, which reviews the issue.
 ```

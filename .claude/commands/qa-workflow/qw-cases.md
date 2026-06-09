@@ -25,8 +25,8 @@ Fits in the qa-workflow:
     /qw-cases STORY-003
         │
         ├─► Step 1: Read the test-plan issue
-        │   - Find it (search the full title — dev and qa share the `plan` label):
-        │       gh issue list --search "[STORY-XXX] Test Plan" --label plan --state all
+        │   - Find it (`test-plan` is qa's own label — distinct from dev's `plan`):
+        │       gh issue list --search "[STORY-XXX] Test Plan" --label test-plan --state all
         │     Read its scenarios; note its number <plan>. (No plan issue → the scenarios
         │     came from /qw-plan in chat; <plan> is absent.)
         │
