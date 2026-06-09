@@ -51,7 +51,7 @@ Fits in the qa-workflow:
         │       gh label create "test-plan" --color "006b75" --description "The qa test plan for a story (what to test)" --force
         │   - Write the scenarios into a GitHub issue so they outlive the session
         │     (the template below). Title: [STORY-XXX] Test Plan
-        │     (ad-hoc target → "Test Plan: <subject>", no story prefix). Label: plan.
+        │     (ad-hoc target → "Test Plan: <subject>", no story prefix). Label: test-plan.
         │       gh issue create --label "test-plan" --title "[STORY-XXX] Test Plan" --body "…"
         │
         └─► Step 5: Hand off — stop for review
