@@ -4,13 +4,13 @@
 Check the proposed scenarios cover the story — and stay coverage, not a frozen
 step-by-step spec.
 
-Target: the scenario list from /qw-plan for a STORY-XXX — as proposed in the
-conversation, or as already realized in docs/tests/ when reviewing after the fact.
+Target: the `[STORY-XXX] Test Plan` issue written by `/qw-plan` (label `plan`).
 
 ## PURPOSE
 
-The paired review for `/qw-plan`. Gates the plan before `qw-cases` writes any docs,
-so coverage gaps are caught cheaply.
+The paired review for `/qw-plan`. Gates the persisted **test-plan issue** before
+`qw-cases` writes any docs, so coverage gaps are caught cheaply. See
+`.claude/rules/qa-workflow.md`.
 
 Fits in the qa-workflow:
 
@@ -23,24 +23,32 @@ Fits in the qa-workflow:
 
     /qw-review-plan STORY-003
         │
-        ├─► Step 1: Coverage vs the story
+        ├─► Step 1: Read the test-plan issue
+        │   - Find it (search the full title — dev and qa share the `plan` label):
+        │       gh issue list --search "[STORY-XXX] Test Plan" --label plan --state all
+        │     (ad-hoc target: search "Test Plan: <subject>"). Read its scenarios.
+        │   - If none exists, report and stop (run `/qw-plan` first).
+        │
+        ├─► Step 2: Coverage vs the story
         │   - [ ] Every item in the story's "Success Looks Like" maps to a scenario.
         │   - [ ] Nothing essential to verifying the story is missing.
         │   - [ ] No scenario goes beyond the story's need.
         │
-        ├─► Step 2: Each scenario
+        ├─► Step 3: Each scenario
         │   - [ ] One coherent slice; independently runnable.
         │   - [ ] Maps to at least one cicd executable (or names the gap to author).
         │   - [ ] No duplication of a scenario already in docs/tests/ (grep the story link).
         │
-        └─► Step 3: Decision
-            - PASS: covers the story → proceed to `/qw-cases`.
-            - REVISE: name the missing or excess scenario; back to `/qw-plan`.
+        └─► Step 4: Decision (recorded on the issue)
+            - PASS: covers the story → comment "Reviewed — covers the story" on the issue;
+              proceed to `/qw-cases`.
+            - REVISE: comment the missing or excess scenario on the issue; back to `/qw-plan`.
 
 ---
 
 ## API Notes
 
 - Coverage gate only — step detail is `qw-cases`/`qw-review-cases`'s job.
-- Review paired with the producer `/qw-plan`.
+- Review paired with the producer `/qw-plan`; it gates the persisted
+  `[STORY-XXX] Test Plan` issue, recording PASS/REVISE as a comment on it.
 ```
