@@ -35,4 +35,4 @@ checkpoint that makes the rest of the work resumable.
 ## Status
 
 - Created: 2026-06-09
-- Issues: #84 (design), #85, #86, #88, #89, #90
+- Issues: #84 (design — PR #95 open), #85, #86, #88, #89, #90
