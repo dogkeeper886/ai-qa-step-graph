@@ -22,6 +22,9 @@ and prepares for PR creation when done.
         │   - Read acceptance criteria, technical notes, dependencies
         │   - Check labels — type and priority should already be set
         │   - Check for linked/blocking issues
+        │   - If the issue body links a plan ("Part of #<plan>"), read that plan
+        │     issue — its Approach is the agreed checkpoint to build from, so a fresh
+        │     session resumes without re-deriving it: gh issue view <plan>
         │   - If issue title contains [STORY-XXX], read docs/stories/STORY-XXX.md
         │     for full context (the user story and the need it serves)
         │   - If anything is unclear, ask the user before starting
@@ -114,4 +117,7 @@ history — start, failures, fixes, and resolution.
 - Branch naming convention: `issue-<number>-<short-slug>`
 - Always comment on the issue before and after implementation
 - Label management: `status:in-progress` while working, `status:blocked` if stuck
+- For a planned task, the linked plan issue (`Part of #<plan>`) holds the agreed
+  approach — the checkpoint a fresh session resumes from (see
+  `.claude/rules/dev-workflow.md`)
 ```
