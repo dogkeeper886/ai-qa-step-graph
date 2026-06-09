@@ -11,17 +11,23 @@ written as readable markdown in `docs/tests/`, bound to the `cicd/` runner, and 
 for drift. Each producer is paired with a review, the same discipline `dev-workflow`
 and `reviewing-artifacts` enforce.
 
+> **Persisted plan (STORY-009), landing incrementally.** `qw-plan` writes the agreed
+> scenarios to a `docs/tests/PLAN-STORY-XXX.md` doc (format in `docs/tests/README.md`);
+> `qw-review-plan` reviews that doc; `qw-cases` reads it and the `TS-*.md` trace back via a
+> `plan:` field. The command edits are #104 (`qw-plan`) / #105 (`qw-review-plan`) / #106
+> (`qw-cases`) — until they land, the plan lives only in the conversation as before.
+
 ## The flow
 
 ```
    docs/stories/STORY-XXX.md   ──or──  "write a test for X"   (on request)
             │
             ▼
-   qw-plan ───────► qw-review-plan      what to test — scenarios that cover the story
-            │
+   qw-plan ───────► qw-review-plan      what to test — scenarios persisted to
+            │                            docs/tests/PLAN-STORY-XXX.md (cover the story)
             ▼
-   qw-cases ──────► qw-review-cases     write docs/tests/TS-*.md (the #23 format);
-            │                            dogfood search_step first — reuse a vetted step
+   qw-cases ──────► qw-review-cases     write docs/tests/TS-*.md (the #23 format) from the
+            │                            plan; dogfood search_step first — reuse a vetted step
             ▼
    qw-bind ───────► qw-review-bind      bind each case ↔ a cicd YAML (audit, not codegen)
             │

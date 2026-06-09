@@ -9,6 +9,36 @@ checks. The executable (`cicd/tests/testcases/**/*.yml`) is the source of truth 
 This format realizes [STORY-004](../stories/STORY-004.md); the flow it belongs to
 is the [#21 design record](https://github.com/dogkeeper886/ai-qa-step-graph/issues/21).
 
+## Plan docs — the persisted what-to-test (STORY-009)
+
+Before any `TS-*.md` is written, `qw-plan` records the **scenarios that cover a story** as
+a persisted plan doc, so the agreed "what to test" survives the session and `qw-review-plan`
+reviews a real artifact, not a chat message. One plan per story:
+
+```
+docs/tests/
+  PLAN-STORY-009.md            # the scenarios (TS-to-be) that cover STORY-009
+  TS-01-….md                   # the cases qw-cases writes from it
+```
+
+Front-matter:
+
+```yaml
+---
+story: STORY-009                # the need this plan covers (→ docs/stories/STORY-009.md)
+story_hash: 7474d8b6…           # sha256 of the story file at plan time (same drift anchor as a TS)
+status: draft                   # draft | reviewed  (qw-review-plan sets `reviewed`)
+---
+```
+
+Body: one section per scenario (a TS-to-be) — its objective and the cases (TC-to-be) it
+will hold, a sentence each. A scenario here is a *plan item*, not yet a file; `qw-cases`
+turns each into a `TS-*.md` and sets that doc's `plan:` field back to this plan.
+
+The plan doc reuses `story_hash` as its drift anchor: if the story changes, the plan is
+`stale` like any TS. (Plan→TS drift — a TS diverging from a changed plan — is out of scope
+for now; a `plan_hash` on the TS is the future hook if we want it.)
+
 ## One file = one scenario (TS), many cases (TC)
 
 Mirrors how QA test cases are conventionally authored: a **scenario** groups related
@@ -34,6 +64,7 @@ id: TS-01                       # scenario id, unique within the namespace
 title: Stack builds and runs its lifecycle
 namespace: ai-qa-step-graph     # which repo/tenant this test belongs to (multi-tenant key)
 story: STORY-003                # the need this scenario verifies (→ docs/stories/STORY-003.md)
+plan: PLAN-STORY-003            # the plan doc this scenario was authored from (qw-cases sets it)
 issue: 23                       # the implementing issue (optional)
 status: green                   # green | stale | unbound  (maintained by the drift gate, #27)
 story_hash: 7474d8b6…           # sha256 of the linked story file at last sync (drift anchor)
@@ -45,6 +76,8 @@ story_hash: 7474d8b6…           # sha256 of the linked story file at last sync
   security boundary. This repo's own tests use `ai-qa-step-graph`.
 - `story` + `story_hash` are the drift anchor: when the story file changes, its hash no
   longer matches and the scenario is flagged `stale` (#27).
+- `plan` traces the scenario back to the `PLAN-STORY-XXX.md` it was authored from
+  (`qw-cases` sets it). Optional — absent when a test was written without a plan doc.
 - The **`Script:` binding is per-TC, not in front-matter** — a scenario's cases can map
   to different executables.
 
