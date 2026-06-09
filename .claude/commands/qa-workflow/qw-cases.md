@@ -4,7 +4,7 @@
 Turn a reviewed test plan into readable test docs in docs/tests/ — reusing vetted
 steps from the store instead of re-inventing them.
 
-Target: the scenarios approved by /qw-review-plan for a STORY-XXX.
+Target: the reviewed `[STORY-XXX] Test Plan` issue from `/qw-review-plan` (its scenarios).
 
 ## PURPOSE
 
@@ -24,13 +24,20 @@ Fits in the qa-workflow:
 
     /qw-cases STORY-003
         │
-        ├─► Step 1: One file per scenario
+        ├─► Step 1: Read the test-plan issue
+        │   - Find it (search the full title — dev and qa share the `plan` label):
+        │       gh issue list --search "[STORY-XXX] Test Plan" --label plan --state all
+        │     Read its scenarios; note its number <plan>. (No plan issue → the scenarios
+        │     came from /qw-plan in chat; <plan> is absent.)
+        │
+        ├─► Step 2: One file per scenario
         │   - Create docs/tests/TS-NN-<slug>.md with front-matter:
         │       id, title, namespace, story (+ story_hash = sha256 of the story file),
+        │       plan: <plan> (the test-plan issue number — omit when there is none),
         │       issue, status: green
         │   - (Format and field meanings: docs/tests/README.md.)
         │
-        ├─► Step 2: Write each case (TC) — reuse before re-inventing (dogfood the store)
+        ├─► Step 3: Write each case (TC) — reuse before re-inventing (dogfood the store)
         │   - Before writing a new case, check whether its objective is already
         │     covered:  make query-cases Q="<what the case verifies>"
         │     If a close case comes back, extend or adjust it instead of adding a
@@ -41,11 +48,11 @@ Fits in the qa-workflow:
         │     meaning, same good expected result — instead of coining a new one.
         │   - Fill the Steps table: each row one Action + its Expected Result.
         │
-        ├─► Step 3: Index + bind
+        ├─► Step 4: Index + bind
         │   - Load the new docs into the store:  npm --prefix step-store run load-tests
         │   - Bind each case to its executable:  /qw-bind  (then /qw-review-bind)
         │
-        └─► Step 4: Hand off
+        └─► Step 5: Hand off
             - Run `/qw-review-cases` to gate the docs.
 
 ---
@@ -57,5 +64,7 @@ Fits in the qa-workflow:
   `make query-cases`) does the same at the case level — find an existing test by
   what it verifies before authoring a near-duplicate.
 - `story_hash`: `sha256sum docs/stories/STORY-XXX.md`.
+- `plan`: the `[STORY-XXX] Test Plan` issue number — the scenario source and the trace
+  back (see docs/tests/README.md). Absent for ad-hoc tests written without a plan.
 - Producer paired with `/qw-review-cases`.
 ```
