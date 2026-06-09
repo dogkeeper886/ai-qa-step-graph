@@ -10,9 +10,9 @@ Turns a need into shipped code. A story states the **need** (a goal, not a spec)
 out. Each producer is paired with a review — the same discipline `qa-workflow` and
 `reviewing-artifacts` enforce.
 
-> **Target flow (STORY-008), landing incrementally.** `dw-plan` now produces the plan
-> issue (#85). `dw-tasks` consuming it is still pending (#86) — until that lands, run
-> `dw-tasks` from the story as before.
+> **Plan stage is live (STORY-008).** `dw-plan` produces the plan issue (#85) and
+> `dw-tasks` breaks it into tasks (#86). Remaining polish: `dw-story` hand-off (#88),
+> `dw-implement` reading the plan (#89), `dw-review-tasks` link check (#90).
 
 ## The flow
 
