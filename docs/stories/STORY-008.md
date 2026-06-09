@@ -36,4 +36,5 @@ Resolved by the #84 design (recorded in `.claude/rules/dev-workflow.md`):
 ## Status
 
 - Created: 2026-06-09
-- Issues: #84 (design ✓), #85 (dw-plan ✓), #86 (dw-tasks ✓), #88 (dw-story ✓), #89 (dw-implement ✓), #90
+- Completed: 2026-06-09
+- Issues: #84 (design ✓), #85 (dw-plan ✓), #86 (dw-tasks ✓), #88 (dw-story ✓), #89 (dw-implement ✓), #90 (dw-review-tasks ✓)
