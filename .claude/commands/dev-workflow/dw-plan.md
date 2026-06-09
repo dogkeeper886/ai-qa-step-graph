@@ -1,129 +1,135 @@
-# Plan Development Work into GitHub Issues
+# Plan Development Work into a Plan Issue
 
 ```
-Break down a user request into GitHub Issues with labels and priorities.
+Research a story and write the plan — the agreed approach — as ONE GitHub plan
+issue, then stop for human review.
 
-Request: {{input}}
+Target: a STORY-XXX (or a raw request).
 
 ## PURPOSE
 
-Analyzes a feature request, enhancement, or bug report and creates well-structured
-GitHub Issues with proper labels and priorities. Checks for duplicates, breaks down
-multi-part requests, and waits for user approval before implementation begins.
+The front of the dev-workflow's build half: turn a story's *need* into an agreed
+*approach*, captured as a durable, reviewable **plan issue** before any task issue is
+opened. It researches against the repo (conventions, prior issues) so the plan is
+grounded, writes one plan issue, and **stops** — a human reviews the plan on GitHub,
+then `/dw-tasks` decomposes it. The plan issue is the parent of the task issues and the
+checkpoint a fresh session resumes from. See `.claude/rules/dev-workflow.md`.
+
+Fits in the dev-workflow:
+
+    dw-story → dw-review-story → dw-plan → [human reviews the plan issue]
+             → dw-tasks → dw-review-tasks → dw-implement → …
+
+This command produces the plan only. It does NOT create task issues — that is `/dw-tasks`.
 
 ---
 
 ## WORKFLOW
 
-    /dw-plan Add cross-repo sync commands
+    /dw-plan STORY-003
         │
-        ├─► Step 1: Check Existing Issues
-        │   - Run: gh issue list --state all --limit 50
-        │   - Scan for duplicates or related issues
-        │   - If duplicate found, report and ask user how to proceed
+        ├─► Step 1: Read the need (and right-size)
+        │   - If a STORY-XXX: read docs/stories/STORY-XXX.md (the need + "Success Looks Like").
+        │   - If a raw request: restate the need in a sentence.
+        │   - RIGHT-SIZE: if the work is trivial — a one-line change or a single,
+        │     obvious task — skip planning. Say so and hand off straight to
+        │     /dw-tasks (or a lone issue). The plan stage is for non-trivial stories.
         │
-        ├─► Step 2: Classify the Request
-        │   - Determine type: feature / enhancement / bug / docs
-        │   - Determine priority: high / medium / low
-        │   - Break down into individual issues if request covers multiple items
+        ├─► Step 2: Research (ground the approach)
+        │   - Investigate the repo so the plan reflects it, not generic advice:
+        │     • conventions — CLAUDE.md, .claude/rules/, neighbouring code patterns
+        │     • prior art — gh issue list --state all --limit 50 ; related stories
+        │   - Note the approach, the commands/files it will touch, and open questions.
         │
-        ├─► Step 3: Create Labels (idempotent)
-        │   - Ensure type labels exist:
-        │     • feature        (color: #0e8a16) — New capability
-        │     • enhancement    (color: #1d76db) — Improve existing
-        │     • bug            (color: #d93f0b) — Bug report
-        │     • docs           (color: #c5def5) — Documentation
-        │   - Ensure priority labels exist:
-        │     • priority:high   (color: #b60205) — Important, fix soon
-        │     • priority:medium (color: #fbca04) — Normal priority
-        │     • priority:low    (color: #0e8a16) — Nice to have
-        │   - Ensure status labels exist:
-        │     • status:in-progress  (color: #1d76db) — Work started
-        │     • status:needs-review (color: #e4e669) — PR open, awaiting review
-        │     • status:blocked      (color: #d93f0b) — Blocked by dependency
+        ├─► Step 3: Check for an existing plan
+        │   - Run: gh issue list --search "[STORY-XXX] Plan" --state all
+        │   - If a plan issue already exists, report and ask how to proceed (extend it,
+        │     not duplicate).
+        │
+        ├─► Step 4: Ensure labels (idempotent)
+        │   - plan           (color: #5319e7) — The approach for a story, before tasks
+        │   - priority:high / priority:medium / priority:low (as in /dw-tasks)
         │   - Use: gh label create "<name>" --color "<hex>" --description "<desc>" --force
         │
-        ├─► Step 4: Create Issues
-        │   - One issue per distinct work item
-        │   - Use the appropriate body template (see below)
-        │   - Apply type + priority labels
-        │   - Link related issues: "Depends on #N", "Related to #N"
+        ├─► Step 5: Write ONE plan issue
+        │   - Title: [STORY-XXX] Plan   (raw request: "Plan: <short need>")
+        │   - Body: the template below — approach, acceptance criteria, the
+        │     commands/files it expects to touch, open questions.
+        │   - Labels: plan + priority. Link the story: "Part of STORY-XXX".
         │
-        ├─► Step 5: Summarize
-        │   - Output a table of created issues:
-        │     | Issue | Title | Type | Priority | URL |
-        │   - Wait for user approval before proceeding
+        ├─► Step 6: Record on the story (if a STORY-XXX)
+        │   - Update docs/stories/STORY-XXX.md Status with the plan issue number:
+        │     - Plan: #<plan>
         │
-        └─► Step 6: User Approval Gate
-            - Ask: "Want me to start on #N?"
-            - Do NOT proceed to /dw-implement until user explicitly approves
+        └─► Step 7: Hand off — stop for human review
+            - Show the plan issue URL.
+            - STOP. The plan now waits for a HUMAN to read, comment, and approve it on
+              GitHub. Do NOT create task issues and do NOT auto-advance.
+            - Once a human is satisfied: /dw-tasks STORY-XXX breaks the plan into tasks.
 
 ---
 
-## ISSUE BODY TEMPLATES
+## PLAN ISSUE BODY TEMPLATE
 
-### Feature / Enhancement
+    ## Context
+    Part of [STORY-XXX](../docs/stories/STORY-XXX.md) — <the need, one line>.
 
-    ## User Story
-    As a [role], I want [capability], so that [benefit].
+    ## Approach
+    <How we'll meet the need — the agreed shape of the work, grounded in the repo.>
 
     ## Acceptance Criteria
-    1. ...
+    - [ ] <observable outcome that means the story is delivered>
 
-    ## Technical Notes
-    - ...
+    ## Touches
+    - <commands / files / areas the work is expected to change>
 
-    ## Dependencies
-    - None | Depends on #N
-
-### Bug
-
-    ## Description
-    ...
-
-    ## Expected Behavior
-    ...
-
-    ## Steps to Reproduce
-    1. ...
+    ## Open Questions
+    - <what's still unresolved — settled as the tasks are worked>
 
 ---
 
 ## EXAMPLE
 
-    /dw-plan Add command to generate release notes from git history
+    /dw-plan STORY-003
 
-**Agent creates:**
+**Agent reads the story, researches, writes one plan issue:**
 
-    gh issue create \
-      --label "feature" --label "priority:medium" \
-      --title "Add release notes generator command" \
-      --body "## User Story
-    As a developer, I want to generate release notes from git history,
-    so that I can quickly summarize changes for each release.
-
+    $ cat docs/stories/STORY-003.md
+    $ gh issue list --state all --limit 50
+    $ gh issue list --search "[STORY-003] Plan" --state all
+    $ gh label create "plan" --color "5319e7" --description "The approach for a story, before tasks" --force
+    $ gh issue create --label "plan" --label "priority:high" \
+        --title "[STORY-003] Plan" \
+        --body "## Context
+    Part of STORY-003 — validate inbound payloads.
+    ## Approach
+    ...
     ## Acceptance Criteria
-    1. Command reads git log between two tags
-    2. Groups commits by type (feature, fix, docs)
-    3. Outputs formatted markdown
+    - [ ] ...
+    ## Touches
+    - ...
+    ## Open Questions
+    - ..."
 
-    ## Dependencies
-    - None"
+**Story file updated:**
+
+    ## Status
+    - Created: 2026-04-01
+    - Plan: #28
 
 **Output:**
 
-    | Issue | Title                              | Type    | Priority | URL                    |
-    |-------|------------------------------------|---------|----------|------------------------|
-    | #27   | Add release notes generator command | feature | medium   | https://github.com/... |
-
-    Want me to start on #27?
+    Plan issue #28 created: https://github.com/owner/repo/issues/28
+    A human reviews + approves it; then /dw-tasks STORY-003 breaks it into tasks.
 
 ---
 
 ## API Notes
 
 - Uses `gh` CLI — must be authenticated (`gh auth status`)
-- Labels use `--force` flag so existing labels are updated, not duplicated
-- Always check for duplicates before creating new issues
-- The issue body is the single source of truth for the work item
+- Labels use `--force` so existing labels are updated, not duplicated
+- One plan issue per story — check for duplicates before creating
+- The plan issue is the parent of the task issues; the story records the need, the plan
+  records the approach, the task issues carry the how (see .claude/rules/dev-workflow.md)
+- Trivial work skips this command — go straight to /dw-tasks
 ```
