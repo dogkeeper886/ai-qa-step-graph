@@ -25,12 +25,13 @@ checkpoint that makes the rest of the work resumable.
 
 ## Open Questions
 
-- Which existing commands carry this, given the constraint of **no new skill / reuse
-  existing commands only** — and how the plan reviewer fits the repo's producer↔review
-  pairing.
-- Where the plan lives (a GitHub issue vs. another durable form) and how `dw-tasks`
-  consumes it.
-- How to keep this off trivial, one-line changes (right-size it).
+Resolved by the #84 design (recorded in `.claude/rules/dev-workflow.md`):
+- Which existing commands carry this, and the plan reviewer → the plan is gated by a
+  **human review** on GitHub, no new command.
+- Where the plan lives → a **GitHub issue**, one per story. How `dw-tasks` consumes it is
+  built in #86.
+- Keeping this off trivial, one-line changes → the **right-size rule** (skip the plan
+  stage).
 
 ## Status
 
