@@ -66,9 +66,14 @@ Substantial work flows through a pipeline; each step is a gate that stops for a
 human decision (commands suggest the next, they never auto-run it):
 
 ```
-dw-story → dw-tasks → dw-review-tasks → dw-implement
-        → dw-review-implement → dw-create-pr → dw-merge
+dw-story → dw-review-story → dw-plan → [human reviews the plan issue]
+        → dw-tasks → dw-review-tasks → dw-implement → dw-review-implement
+        → dw-create-pr → dw-merge
 ```
+
+The plan stage (`dw-plan` → a reviewed plan issue → `dw-tasks`) is STORY-008; the full
+flow + producer→review pairing lives in `.claude/rules/dev-workflow.md`. Trivial work
+skips the plan: `dw-story → dw-tasks`.
 
 Two review gates are external skills this repo does not own — invoke them by hand:
 - `code-review` (bundled): adversarial diff review. Run after `dw-implement`,

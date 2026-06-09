@@ -71,7 +71,9 @@ proof of concept, or clarification. The "how" goes here, not above.]
 
 Show the user the created story and suggest next steps:
 - `/dw-review-story STORY-XXX` to check it's complete and still a goal, not a spec
-- `/dw-tasks STORY-XXX` to open GitHub issue(s) where the *how* gets worked out
+- `/dw-plan STORY-XXX` to research the approach and write the plan issue (the agreed
+  *how*), reviewed before it's broken into tasks
+- Trivial / single-task work can skip the plan — `/dw-tasks STORY-XXX` straight away
 - `/qw-plan` to plan what to test (if QA-related)
 
 ---
