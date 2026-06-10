@@ -39,7 +39,7 @@ hands it back to `/dw-story` if the need itself is unclear.
         │   - [ ] No implementation detail in the body — no specific files, APIs,
         │         frameworks, data shapes, or step-by-step "how"
         │   - [ ] Success Looks Like describes observable user-facing results, not
-        │         implementation steps ("the studio shows the stories", not "parse
+        │         implementation steps ("the project shows the stories", not "parse
         │         markdown with X and render with Y")
         │   - [ ] The technical / uncertain "how" lives in Open Questions, deferred
         │         to the issue — it is not asserted as decided in the body
@@ -66,10 +66,10 @@ hands it back to `/dw-story` if the need itself is unclear.
 **Agent reads the story, runs both checklists:**
 
     Completeness:
-    ✓ Title specific — "See the project's stories in the studio"
+    ✓ Title specific — "See the project's stories"
     ✓ User Story — role + action + benefit all present
-    ✓ The Need — explains why (studio is the face over the markdown source of truth)
-    ✓ Success Looks Like — observable (studio shows stories, reflects changes)
+    ✓ The Need — explains why (the project is the face over the markdown source of truth)
+    ✓ Success Looks Like — observable (the project shows stories, reflects changes)
     ✓ Open Questions — presentation, status, read strategy all deferred
     ✓ Status — Created date present
 
