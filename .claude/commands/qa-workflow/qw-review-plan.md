@@ -14,8 +14,8 @@ The paired review for `/qw-plan`. Gates the persisted **test-plan issue** before
 
 Fits in the qa-workflow:
 
-    qw-plan → qw-review-plan → qw-cases → qw-review-cases → qw-bind → qw-run
-    (qw-run = `make up` + the cicd runner — a phase, not a slash command)
+    qw-plan → qw-review-plan → qw-cases → qw-review-cases   (the authoring half)
+    → hand off to the project's binding + run layer
 
 ---
 
@@ -36,7 +36,7 @@ Fits in the qa-workflow:
         │
         ├─► Step 3: Each scenario
         │   - [ ] One coherent slice; independently runnable.
-        │   - [ ] Maps to at least one cicd executable (or names the gap to author).
+        │   - [ ] Maps to at least one of the project's executables (or names the gap).
         │   - [ ] No duplication of a scenario already in docs/tests/ (grep the story link).
         │
         └─► Step 4: Decision (recorded on the issue)
