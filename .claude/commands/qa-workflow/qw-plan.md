@@ -16,8 +16,8 @@ survives the session and `qw-review-plan` reviews a real artifact (not a chat me
 
 Fits in the qa-workflow:
 
-    qw-plan → qw-review-plan → qw-cases → qw-review-cases → qw-bind → qw-run
-    (qw-run = `make up` + the cicd runner — a phase, not a slash command)
+    qw-plan → qw-review-plan → qw-cases → qw-review-cases   (the authoring half)
+    → hand off to the project's binding + run layer
 
 ---
 
@@ -29,13 +29,11 @@ Fits in the qa-workflow:
         │   - If a STORY-XXX: read docs/stories/STORY-XXX.md (the need + "Success Looks Like").
         │   - If an on-request target: restate what behaviour is to be verified.
         │
-        ├─► Step 2: Check what already exists (dogfood the store)
-        │   - Search the store for test cases already covering this behaviour —
-        │     by what a test verifies, not its step text:
-        │       make query-cases Q="<the behaviour>"
-        │     so the plan reuses vetted coverage instead of duplicating it.
+        ├─► Step 2: Check what already exists
         │   - List the docs/tests/ scenarios already linked to this story:
         │       grep -l 'story: STORY-XXX' docs/tests/
+        │   - If the project has a reuse index, query it for cases already covering this
+        │     behaviour, so the plan reuses vetted coverage instead of duplicating it (optional).
         │   - Check for an existing test-plan issue (extend it, don't duplicate):
         │       gh issue list --search "[STORY-XXX] Test Plan" --label test-plan --state all
         │     (`test-plan` is qa's own label — distinct from dev's `plan`)
@@ -43,7 +41,7 @@ Fits in the qa-workflow:
         ├─► Step 3: Propose scenarios
         │   - Break the need into scenarios (TS-to-be), each:
         │     • one coherent slice of behaviour, • independently runnable,
-        │     • mappable to one or more cicd executables.
+        │     • mappable to one or more of the project's executables (bound later, project layer).
         │   - For each, name the cases (TC-to-be) it will hold, at a sentence each.
         │
         ├─► Step 4: Open the test-plan issue
