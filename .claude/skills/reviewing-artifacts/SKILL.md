@@ -3,7 +3,7 @@ name: reviewing-artifacts
 description: |
   Reviews any workflow artifact — the commands, skills, and project docs that are the
   tooling (READMEs, stories, CLAUDE.md, and the like) — against five goal questions:
-  one clear job, complete, a goal not a frozen spec, fits the studio, right for its
+  one clear job, complete, a goal not a frozen spec, fits the project, right for its
   reader. Also runs a producer→review pairing coverage pass that flags any producer
   shipped without a paired review. It judges whether an artifact does its job; how a
   human-read doc (the README, docs/ prose) looks and reads goes to the typography +
@@ -39,10 +39,10 @@ Ask these of any artifact. The artifact's type shifts which ones bite hardest.
    where room belongs, instead of freezing a "how" that will drift? Flag stale paths or
    filenames, magic values that should be derived, rigid step-by-step where a principle
    would do, and references to tools or layouts that have moved.
-4. **Fits the studio.** Does it match the conventions this project actually uses —
+4. **Fits the project.** Does it match the conventions this project actually uses —
    markdown as the source of truth, plus the tools and layout the repo relies on now —
    rather than a stack it has moved past? Flag coupling to a tool or layout the project
-   has genuinely retired or relocated; an integration the studio still uses, or a
+   has genuinely retired or relocated; an integration the project still uses, or a
    deliberate adapter, is not a violation. Cross-references resolve to files that exist.
 5. **Right for its reader.** Agent-facing (commands, skills): unambiguous instructions
    the agent can follow. Human-facing (README, story): reads like a person wrote it for
@@ -113,7 +113,7 @@ Per artifact, a short verdict and the specific findings — no numeric score.
 - [Q#] <finding, with line reference> → <smallest fix>
 ```
 
-- **PASS** — does its job, fits the studio, nothing leaked.
+- **PASS** — does its job, fits the project, nothing leaked.
 - **REVISE** — specific, fixable findings (gaps, hardcoding, drift, readability).
 - **CUT** — duplicates another artifact or does nothing useful; propose removal (with approval).
 
