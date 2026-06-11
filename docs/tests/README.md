@@ -9,6 +9,10 @@ checks. The executable (`cicd/tests/testcases/**/*.yml`) is the source of truth 
 This format realizes [STORY-004](../stories/STORY-004.md); the flow it belongs to
 is the [#21 design record](https://github.com/dogkeeper886/ai-qa-step-graph/issues/21).
 
+**This format is the contract group A (authoring) owns and group B (execution) reads** — A
+writes these docs; the per-TC `Script:` binding belongs to B (`qw-bind`); B and C parse the
+markdown per this spec, never via a code import. See `.claude/rules/qa-workflow.md`.
+
 The "what to test" that precedes these docs is the **test-plan issue** (`[STORY-XXX] Test
 Plan`, written by `qw-plan`); each `TS-*.md` traces back to it via the `plan:` field below.
 See `.claude/rules/qa-workflow.md`.

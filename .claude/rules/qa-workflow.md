@@ -5,70 +5,69 @@ paths:
 
 # qa-workflow
 
-A sibling to `dev-workflow`. Where dev-workflow turns a need into shipped code,
-qa-workflow turns a story (or an on-request target) into a **trustworthy test** —
-written as readable markdown in `docs/tests/`, bound to the `cicd/` runner, and watched
-for drift. Each producer is paired with a review, the same discipline `dev-workflow`
-and `reviewing-artifacts` enforce.
+A sibling to `dev-workflow`: it turns a story into a **trustworthy test**. STORY-010 factored
+it into **three groups**, each with a canonical home repo, **wired only by artifacts** — no
+group calls into another's internals.
 
-## The flow
+## The three groups
+
+| Group | Commands / code | Canonical home | Needs |
+|-------|-----------------|----------------|-------|
+| **A · authoring** | `qw-plan` · `qw-review-plan` · `qw-cases` · `qw-review-cases` + the `docs/tests/` format | **ai-qa-workflow** | markdown + GitHub |
+| **B · execution + binding/drift** | `qw-bind` · `qw-review-bind` · `qw-run` · `qw-drift` + `audit-bind`/`drift`/`port-yaml` | **test-framework-template** | a runner (cicd YAML) |
+| **C · step reuse** | the `step-store` (pgvector) + `load-tests` / `search_step` | **ai-qa-step-graph** (here) | a database |
+
+This repo is the **C source** and also a **full consumer** — it runs A + B + C against its own tests.
+
+## The flow (here, as a consumer)
 
 ```
-   docs/stories/STORY-XXX.md   ──or──  "write a test for X"   (on request)
+   docs/stories/STORY-XXX.md   ──or──  "write a test for X"
             │
-            ▼
-   qw-plan ───────► qw-review-plan      what to test — scenarios persisted as the
-            │                            [STORY-XXX] Test Plan issue (cover the story)
-            ▼
-   qw-cases ──────► qw-review-cases     write docs/tests/TS-*.md (the #23 format) from the
-            │                            plan; dogfood search_step first — reuse a vetted step
-            ▼
-   qw-bind ───────► qw-review-bind      bind each case ↔ a cicd YAML (audit, not codegen)
+            ▼  A · AUTHORING  (markdown + GitHub)
+   qw-plan ──► qw-review-plan      scenarios → the [STORY-XXX] Test Plan issue
+   qw-cases ─► qw-review-cases     write docs/tests/TS-*.md  (optional: reuse from C)
             │
-            ▼
-   qw-run            make up + the cicd assert-first runner (not a new executor)
-            │
-            ▼
-   [human reviews results] ──► dw-merge   green CI → CD (publish the MCP image)
-            │
-            ▼
-   qw-drift          freshness gate (CI + on demand): story changed → stale;
-                     doc↔script diverged → unbound. Loops back to qw-cases.
+            ▼  hand off the markdown doc  (an artifact, not a command call)
+   B · EXECUTION + BINDING  (the runner)
+   qw-bind ──► qw-review-bind      bind each case ↔ a cicd YAML (audit, not codegen)
+   qw-run                          make up + the cicd assert-first runner
+   qw-drift                        story changed → stale; doc↔script diverged → unbound
 ```
 
-## The test-plan issue (STORY-009)
+## No cross-references — the wiring is a thin seam
 
-`qw-plan`'s scenarios persist as a **GitHub issue**, titled `[STORY-XXX] Test Plan`,
-labelled `test-plan` — the same plan-as-issue form `dev-workflow` uses (dev's plans carry
-`plan`), with its own label so it never collides with dev's `[STORY-XXX] Plan`. Its body holds the scenarios (each a
-TS-to-be, with the cases it will hold). `qw-review-plan` reviews the issue; `qw-cases` reads
-it and records the issue number in each `TS-*.md` `plan:` field (see `docs/tests/README.md`).
+- **A → B** = artifact handoff: A writes/reviews `docs/tests/TS-*.md` and stops; B binds the
+  `Script:` and runs. A never names `qw-bind`.
+- **A → C** = optional: A may query the reuse index *if one exists*; it authors fine without it.
+- **The `docs/tests/` format is the one shared contract** — A owns it; B (`audit-bind`/`drift`)
+  and C (`load-tests`) read markdown per the spec, not via a code import.
+- **B's binding/drift code is DB-free** — `audit-bind`/`drift`/`port-yaml` import only
+  `node:fs`/`path`/`crypto` + `testdoc`, which is why B travels to test-framework-template
+  without the store.
 
-- **Ad-hoc target** ("write a test for X", no story): the plan issue is titled `Test Plan:
-  <subject>` (no `[STORY-XXX]` prefix) — an issue needs no story anchor, so the no-story
-  path just works. Trivial one-off tests may skip the plan and go straight to `qw-cases`.
-- The plan issue is **not drift-watched** — `qw-drift` still anchors each `TS-*.md` to its
-  story via `story_hash`; a plan diverging from its tests is out of scope (a future hook).
+## The test-plan issue (A's artifact, STORY-009)
+
+`qw-plan`'s scenarios persist as a **GitHub issue**, titled `[STORY-XXX] Test Plan`, labelled
+`test-plan` — its own label so it never collides with dev's `[STORY-XXX] Plan`. `qw-review-plan`
+reviews the issue; `qw-cases` reads it and records the issue number in each `TS-*.md` `plan:`
+field (see `docs/tests/README.md`).
+
+- **Ad-hoc target** ("write a test for X", no story): the plan issue is `Test Plan: <subject>`
+  (no story anchor needed). Trivial one-offs may skip the plan and go straight to `qw-cases`.
+- The plan issue is **not drift-watched** — `qw-drift` anchors each `TS-*.md` to its story via
+  `story_hash`; a plan diverging from its tests is out of scope.
 
 ## Producer → review pairing
 
-| Producer | Review | Covers |
-|----------|--------|--------|
-| `qw-plan`  | `qw-review-plan`  | does the plan cover the story? |
-| `qw-cases` | `qw-review-cases` | each doc: one job, observable, traces back |
-| `qw-bind`  | `qw-review-bind`  | doc↔script agree (audit, `audit-bind`) |
-| `qw-drift` | *(is itself a review)* | the freshness gate |
-| `qw-run`   | *(exempt)* | yields a results log, no outward deliverable |
+| Producer | Review | Group |
+|----------|--------|-------|
+| `qw-plan`  | `qw-review-plan`  | A |
+| `qw-cases` | `qw-review-cases` | A |
+| `qw-bind`  | `qw-review-bind`  | B |
+| `qw-drift` | *(is itself a review)* | B |
+| `qw-run`   | *(exempt — a results log)* | B |
 
 No producer ships without a review covering its output.
-
-## What is reused, not rebuilt
-
-- **The story + issues** come from `dev-workflow` — a story gets both `dw-*` (code)
-  and `qw-*` (tests), referencing the same `STORY-XXX`.
-- **The runner** is `cicd/tests/` (the assert-first YAML runner) + `make up`.
-- **The store** is the STORY-001 step-store: `qw-cases` calls `search_step` to find a
-  vetted step before authoring one; the loader (`load-tests`) indexes test docs back in.
-- **CI** composes with STORY-002 (`qw-drift` + `audit-bind` run as checks), not a new pipeline.
 
 The format a test doc must follow is `docs/tests/README.md`.
