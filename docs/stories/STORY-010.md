@@ -36,5 +36,6 @@ assumes only GitHub + git; qa-workflow should be able to do the same for its aut
 ## Status
 
 - Created: 2026-06-09
-- Plan: #117
-- Issues: #118, #119
+- Completed: 2026-06-11
+- Plan: #117 (realized)
+- Issues: #118 ✓ (decouple authoring), #119 ✓ (document the A/B/C boundary)
