@@ -42,7 +42,6 @@ let this file or the project's own layer name the mechanism.
 
 - stories dir: `docs/stories/`
 - tests dir: `docs/tests/`
-- diagrams dir: `docs/images/` (SVG source + rendered PNG)
 - story format contract: `docs/stories/README.md`
 - test format contract: `docs/tests/README.md`
 
@@ -86,12 +85,6 @@ project's choice.
   derived link check, say) names that here instead, or `none`. The `qw-*` commands record
   whatever this declares; they do not assume hashing.
 - default status: `green`
-
-## Docs & diagrams
-
-- README output: `README.md`
-- diagram policy: SVG source committed + rendered to PNG (no Mermaid / inline diagram blocks)
-- diagrams dir: `docs/images/` (SVG source + rendered PNG) — also under Paths
 
 ## Review semantics
 
