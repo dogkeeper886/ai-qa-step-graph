@@ -51,7 +51,9 @@ This repo is the **C source** and also a **full consumer** — it runs A + B + C
 `qw-plan`'s scenarios persist as a **GitHub issue**, titled `[STORY-XXX] Test Plan`, labelled
 `test-plan` — its own label so it never collides with dev's `[STORY-XXX] Plan`. `qw-review-plan`
 reviews the issue; `qw-cases` reads it and records the issue number in each `TS-*.md` `plan:`
-field (see `docs/tests/README.md`).
+field (see `docs/tests/README.md`). Closing it falls to
+`dw-merge`: this pipeline has no terminal gate of its own, and the docs reach the default
+branch through the dev-workflow like any other change.
 
 - **Ad-hoc target** ("write a test for X", no story): the plan issue is `Test Plan: <subject>`
   (no story anchor needed). Trivial one-offs may skip the plan and go straight to `qw-cases`.
